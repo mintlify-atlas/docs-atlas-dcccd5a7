@@ -1,0 +1,335 @@
+---
+title: Keybindings
+description: Customize keyboard shortcuts in VS Code
+---
+
+VS Code allows you to customize keyboard shortcuts to match your workflow. All keybindings are stored in JSON format and can be customized to your preferences.
+
+## Viewing Current Keybindings
+
+There are several ways to view and manage your keyboard shortcuts:
+
+<Steps>
+  <Step title="Open Keyboard Shortcuts Editor">
+    Use `Ctrl+K Ctrl+S` (Windows/Linux) or `Cmd+K Cmd+S` (macOS) to open the Keyboard Shortcuts editor.
+    
+    This provides a searchable UI for viewing and editing keybindings.
+  </Step>
+  
+  <Step title="Search for Commands">
+    Type in the search box to filter by:
+    - Command name (e.g., "copy")
+    - Keybinding (e.g., "ctrl+c")
+    - Source (e.g., "@source:user" or "@source:default")
+  </Step>
+  
+  <Step title="Edit Keybindings">
+    Click on a keybinding to edit it, or click the pencil icon to change the key combination.
+  </Step>
+</Steps>
+
+## Keybindings JSON Format
+
+For advanced customization, you can edit the `keybindings.json` file directly:
+
+1. Open the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
+2. Type "Preferences: Open Keyboard Shortcuts (JSON)"
+
+### File Location
+
+- **Windows:** `%APPDATA%\Code\User\keybindings.json`
+- **macOS:** `~/Library/Application Support/Code/User/keybindings.json`
+- **Linux:** `~/.config/Code/User/keybindings.json`
+
+## Keybinding Structure
+
+Each keybinding entry has the following structure:
+
+```json keybindings.json
+[
+  {
+    "key": "ctrl+shift+n",
+    "command": "workbench.action.files.newUntitledFile"
+  },
+  {
+    "key": "ctrl+k ctrl+s",
+    "command": "workbench.action.openGlobalKeybindings"
+  }
+]
+```
+
+### With Conditions (When Clauses)
+
+You can make keybindings context-sensitive using `when` clauses:
+
+```json keybindings.json
+[
+  {
+    "key": "ctrl+enter",
+    "command": "editor.action.insertLineAfter",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "escape",
+    "command": "workbench.action.closeQuickOpen",
+    "when": "inQuickOpen"
+  }
+]
+```
+
+### With Arguments
+
+Some commands accept arguments:
+
+```json keybindings.json
+[
+  {
+    "key": "ctrl+shift+alt+t",
+    "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "npm test\u000D" }
+  },
+  {
+    "key": "ctrl+/",
+    "command": "editor.action.commentLine",
+    "when": "editorTextFocus && !editorReadonly"
+  }
+]
+```
+
+## Removing Default Keybindings
+
+To remove a default keybinding, use the minus sign before the command:
+
+```json keybindings.json
+[
+  {
+    "key": "ctrl+shift+k",
+    "command": "-editor.action.deleteLines",
+    "when": "editorTextFocus"
+  }
+]
+```
+
+<Note>
+Removing a keybinding doesn't delete it permanently from VS Code—it just prevents it from triggering. You can always restore default keybindings from the Keyboard Shortcuts editor.
+</Note>
+
+## Common Keybinding Examples
+
+Here are practical examples of custom keybindings:
+
+### Editor Commands
+
+```json keybindings.json
+[
+  {
+    "key": "ctrl+d",
+    "command": "editor.action.deleteLines",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "ctrl+shift+d",
+    "command": "editor.action.copyLinesDownAction",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "alt+up",
+    "command": "editor.action.moveLinesUpAction",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "alt+down",
+    "command": "editor.action.moveLinesDownAction",
+    "when": "editorTextFocus && !editorReadonly"
+  }
+]
+```
+
+### File Navigation
+
+```json keybindings.json
+[
+  {
+    "key": "ctrl+p",
+    "command": "workbench.action.quickOpen"
+  },
+  {
+    "key": "ctrl+shift+o",
+    "command": "workbench.action.gotoSymbol"
+  },
+  {
+    "key": "ctrl+t",
+    "command": "workbench.action.showAllSymbols"
+  }
+]
+```
+
+### Terminal Commands
+
+```json keybindings.json
+[
+  {
+    "key": "ctrl+`",
+    "command": "workbench.action.terminal.toggleTerminal"
+  },
+  {
+    "key": "ctrl+shift+`",
+    "command": "workbench.action.terminal.new"
+  },
+  {
+    "key": "ctrl+shift+c",
+    "command": "workbench.action.terminal.openNativeConsole",
+    "when": "!terminalFocus"
+  }
+]
+```
+
+### Search and Replace
+
+```json keybindings.json
+[
+  {
+    "key": "ctrl+f",
+    "command": "actions.find",
+    "when": "editorFocus || editorIsOpen"
+  },
+  {
+    "key": "ctrl+h",
+    "command": "editor.action.startFindReplaceAction",
+    "when": "editorFocus || editorIsOpen"
+  },
+  {
+    "key": "ctrl+shift+f",
+    "command": "workbench.action.findInFiles"
+  }
+]
+```
+
+## Chord Keybindings
+
+VS Code supports multi-key sequences (chords):
+
+```json keybindings.json
+[
+  {
+    "key": "ctrl+k ctrl+c",
+    "command": "editor.action.addCommentLine",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "ctrl+k ctrl+u",
+    "command": "editor.action.removeCommentLine",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "ctrl+k ctrl+s",
+    "command": "workbench.action.openGlobalKeybindings"
+  }
+]
+```
+
+<Tip>
+Chords are executed by pressing the first key combination, releasing, then pressing the second combination within a short timeout.
+</Tip>
+
+## When Clause Contexts
+
+Common context keys for `when` clauses:
+
+- `editorTextFocus` - Editor has focus
+- `editorReadonly` - Editor is read-only
+- `editorHasSelection` - Text is selected
+- `inQuickOpen` - Quick Open is visible
+- `terminalFocus` - Terminal has focus
+- `sideBarVisible` - Side bar is visible
+- `explorerViewletVisible` - Explorer is visible
+
+### Combining Conditions
+
+```json keybindings.json
+[
+  {
+    "key": "ctrl+s",
+    "command": "workbench.action.files.save",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "escape",
+    "command": "workbench.action.terminal.focus",
+    "when": "terminalFocus && terminalHasBeenCreated || terminalFocus && terminalProcessSupported"
+  }
+]
+```
+
+## Platform-Specific Keybindings
+
+You can define different keybindings for different platforms in your extensions or using conditional logic. The key format differs:
+
+- **Windows/Linux:** `ctrl`, `shift`, `alt`
+- **macOS:** `cmd`, `shift`, `alt` (or `option`), `ctrl`
+
+<CodeGroup>
+
+```json Windows/Linux
+[
+  {
+    "key": "ctrl+shift+p",
+    "command": "workbench.action.showCommands"
+  }
+]
+```
+
+```json macOS
+[
+  {
+    "key": "cmd+shift+p",
+    "command": "workbench.action.showCommands"
+  }
+]
+```
+
+</CodeGroup>
+
+## Searching Keybindings
+
+You can search keybindings using special filters in the Keyboard Shortcuts editor:
+
+- `@command:commandId` - Find keybindings for a specific command
+- `@source:user` - Show only user-defined keybindings
+- `@source:default` - Show only default keybindings
+- `@source:extension` - Show extension keybindings
+
+## Troubleshooting
+
+<Warning>
+If your custom keybinding isn't working, check:
+
+1. Another keybinding might be overriding it (check for conflicts in the UI)
+2. The `when` clause might not be satisfied
+3. The command ID might be incorrect
+4. There might be a syntax error in your `keybindings.json`
+</Warning>
+
+### Viewing Keybinding Conflicts
+
+In the Keyboard Shortcuts editor, VS Code will show a warning icon next to conflicting keybindings. Click on it to see what other commands use the same shortcut.
+
+## Advanced: JSON Schema
+
+The `keybindings.json` file is validated against a JSON schema that includes:
+
+- `key`: Key or key sequence (required)
+- `command`: Command identifier (required)
+- `when`: Condition for when the keybinding is active (optional)
+- `args`: Arguments to pass to the command (optional)
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Settings" icon="gear" href="./settings">
+    Configure editor behavior
+  </Card>
+  <Card title="Snippets" icon="code" href="./snippets">
+    Create code snippets
+  </Card>
+</CardGroup>

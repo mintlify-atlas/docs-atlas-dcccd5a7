@@ -1,0 +1,488 @@
+---
+title: JavaScript & TypeScript
+description: Comprehensive language support for JavaScript and TypeScript in Visual Studio Code
+---
+
+Visual Studio Code provides exceptional support for JavaScript and TypeScript through the built-in `typescript-language-features` extension. This extension powers intelligent features for both languages using the TypeScript compiler's language service.
+
+## Language Support Architecture
+
+The JavaScript and TypeScript support consists of three main extensions:
+
+<Card title="javascript" icon="js">
+  Provides syntax highlighting, grammar definitions, and snippets for JavaScript and JSX files.
+</Card>
+
+<Card title="typescript-basics" icon="code">
+  Provides syntax highlighting and grammar definitions for TypeScript and TSX files.
+</Card>
+
+<Card title="typescript-language-features" icon="sparkles">
+  Powers IntelliSense, diagnostics, refactoring, and all intelligent features for both JavaScript and TypeScript.
+</Card>
+
+## Supported File Types
+
+The extensions recognize the following file types:
+
+### JavaScript
+- `.js` - JavaScript files
+- `.mjs` - ES6 modules
+- `.cjs` - CommonJS modules  
+- `.jsx` - React JSX files
+- `.es6` - ES6 JavaScript
+- `.pac` - Proxy auto-config files
+
+### TypeScript
+- `.ts` - TypeScript files
+- `.tsx` - TypeScript JSX/React files
+- `.mts` - TypeScript modules
+- `.cts` - TypeScript CommonJS
+
+<Note>
+  Files starting with `#!/usr/bin/env node` or similar shebang are automatically recognized as JavaScript.
+</Note>
+
+## IntelliSense Features
+
+The TypeScript language service provides rich IntelliSense capabilities:
+
+### Code Completion
+
+Intelligent suggestions for:
+- Object properties and methods
+- Function parameters
+- Import statements
+- JSX components and props
+- Type annotations (TypeScript)
+
+```javascript
+// Example: IntelliSense suggests methods as you type
+const numbers = [1, 2, 3];
+numbers.map // Suggests: map, filter, reduce, etc.
+```
+
+### Parameter Hints
+
+Signature help shows parameter information:
+
+```typescript
+function createUser(name: string, age: number, role: 'admin' | 'user') {
+  // ...
+}
+
+createUser( // Parameter hints appear automatically
+```
+
+### Auto Imports
+
+Automatic import suggestions and statement generation:
+
+```javascript
+// Type a symbol name
+React // Automatically suggests adding: import React from 'react';
+```
+
+Control auto-import behavior:
+
+```json
+{
+  "js/ts.preferences.includePackageJsonAutoImports": "auto",
+  "js/ts.preferences.importModuleSpecifier": "shortest"
+}
+```
+
+## Type Checking
+
+### TypeScript Files
+
+TypeScript files receive full type checking automatically:
+
+```typescript
+interface User {
+  name: string;
+  age: number;
+}
+
+const user: User = {
+  name: "John",
+  age: "30" // Error: Type 'string' is not assignable to type 'number'
+};
+```
+
+### JavaScript Files
+
+Enable type checking in JavaScript using JSDoc or by enabling `checkJs`:
+
+```javascript
+// @ts-check
+
+/**
+ * @param {string} name
+ * @param {number} age
+ */
+function createUser(name, age) {
+  return { name, age };
+}
+
+createUser("John", "30"); // Error: Argument of type 'string' is not assignable to parameter of type 'number'
+```
+
+Configuration options:
+
+```json
+{
+  "js/ts.implicitProjectConfig.checkJs": true,
+  "javascript.validate.enable": true
+}
+```
+
+## Debugging Setup
+
+VS Code includes a powerful debugger for JavaScript and TypeScript:
+
+### Node.js Debugging
+
+Create a `.vscode/launch.json` configuration:
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Program",
+      "program": "${workspaceFolder}/app.js",
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"]
+    }
+  ]
+}
+```
+
+### TypeScript Debugging
+
+For TypeScript, configure source maps:
+
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "sourceMap": true,
+    "outDir": "./dist"
+  }
+}
+```
+
+Launch configuration:
+
+```json
+{
+  "type": "node",
+  "request": "launch",
+  "name": "Debug TypeScript",
+  "preLaunchTask": "tsc: build - tsconfig.json",
+  "program": "${workspaceFolder}/src/index.ts",
+  "outFiles": ["${workspaceFolder}/dist/**/*.js"]
+}
+```
+
+### Browser Debugging
+
+Debug client-side JavaScript:
+
+```json
+{
+  "type": "chrome",
+  "request": "launch",
+  "name": "Launch Chrome",
+  "url": "http://localhost:3000",
+  "webRoot": "${workspaceFolder}"
+}
+```
+
+### Auto Attach
+
+Enable auto-attach for Node.js debugging:
+
+```json
+{
+  "debug.javascript.autoAttachFilter": "smart"
+}
+```
+
+<Tip>
+  With auto-attach enabled, simply run `node --inspect` from the integrated terminal and VS Code will automatically attach the debugger.
+</Tip>
+
+## Refactoring
+
+The extension provides numerous refactoring capabilities:
+
+### Extract to Function/Constant
+
+```javascript
+// Select code and use Quick Fix (Cmd+.)
+const total = price * quantity + shipping;
+
+// Refactor to:
+function calculateTotal(price, quantity, shipping) {
+  return price * quantity + shipping;
+}
+```
+
+### Rename Symbol
+
+Intelligent rename across files (F2):
+
+```typescript
+function processUser(user) {
+  // Rename 'user' and all references update
+}
+```
+
+### Organize Imports
+
+Automatically sort and remove unused imports:
+
+```json
+{
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  },
+  "js/ts.preferences.organizeImports": {
+    "caseSensitivity": "auto",
+    "typeOrder": "auto"
+  }
+}
+```
+
+### Convert Between Named and Default Imports
+
+```javascript
+// Convert between these formats via Quick Fix:
+import { Component } from 'react';
+import Component from 'react';
+```
+
+## Language Configuration
+
+### Comment Styles
+
+The extension defines:
+
+```json
+{
+  "comments": {
+    "lineComment": "//",
+    "blockComment": ["/*", "*/"]
+  }
+}
+```
+
+### Bracket Matching
+
+```json
+{
+  "brackets": [
+    ["{", "}"],
+    ["[", "]"],
+    ["(", ")"],
+    ["${", "}"]
+  ]
+}
+```
+
+### Auto-Closing Pairs
+
+Automatic closing for quotes, brackets, and JSDoc:
+
+```json
+{
+  "autoClosingPairs": [
+    { "open": "{", "close": "}" },
+    { "open": "[", "close": "]" },
+    { "open": "(", "close": ")" },
+    { "open": "\"», "close": "\"", "notIn": ["string"] },
+    { "open": "/**", "close": " */", "notIn": ["string"] }
+  ]
+}
+```
+
+## Code Snippets
+
+Built-in snippets for common patterns:
+
+### Class Definition
+
+```javascript
+// Type: class
+class name {
+  constructor(parameters) {
+    
+  }
+}
+```
+
+### Import Statement
+
+```javascript
+// Type: import
+import { } from "module";
+```
+
+### Console Log
+
+```javascript
+// Type: log
+console.log();
+```
+
+### Constructor
+
+```javascript
+// Type: ctor
+/**
+ *
+ */
+constructor() {
+  super();
+  
+}
+```
+
+## Formatting
+
+Configure code formatting preferences:
+
+```json
+{
+  "js/ts.format.enabled": true,
+  "js/ts.format.insertSpaceAfterCommaDelimiter": true,
+  "js/ts.format.insertSpaceAfterKeywordsInControlFlowStatements": true,
+  "js/ts.format.insertSpaceBeforeAndAfterBinaryOperators": true,
+  "js/ts.format.insertSpaceAfterFunctionKeywordForAnonymousFunctions": true
+}
+```
+
+### Quote Style
+
+```json
+{
+  "js/ts.preferences.quoteStyle": "single" // or "double" or "auto"
+}
+```
+
+### Import Module Specifier
+
+```json
+{
+  "js/ts.preferences.importModuleSpecifier": "shortest", // or "relative" or "non-relative"
+  "js/ts.preferences.importModuleSpecifierEnding": "auto" // or "minimal" or "index" or "js"
+}
+```
+
+## TypeScript SDK Configuration
+
+Use a specific TypeScript version:
+
+```json
+{
+  "js/ts.tsdk.path": "node_modules/typescript/lib"
+}
+```
+
+<Warning>
+  Changing the TypeScript SDK affects IntelliSense and error checking. Make sure the workspace TypeScript version is compatible with your project.
+</Warning>
+
+## JSX/React Support
+
+Full support for JSX syntax:
+
+```jsx
+const Component = ({ name }) => {
+  return (
+    <div className="container">
+      <h1>{name}</h1>
+    </div>
+  );
+};
+```
+
+Configuration:
+
+```json
+{
+  "js/ts.preferences.jsxAttributeCompletionStyle": "auto",
+  "js/ts.preferences.renameMatchingJsxTags": true
+}
+```
+
+## Task Integration
+
+Automatic task detection for TypeScript:
+
+```json
+{
+  "js/ts.tsc.autoDetect": "on" // Detects tsc build tasks
+}
+```
+
+Tasks appear automatically in the Tasks menu for:
+- `tsc: build`
+- `tsc: watch`
+
+## Recommended Extensions
+
+Enhance JavaScript/TypeScript development:
+
+<Card title="ESLint">
+  Integrates ESLint for code quality and style checking
+</Card>
+
+<Card title="Prettier">
+  Code formatter with opinionated style rules
+</Card>
+
+<Card title="Jest">
+  Test runner integration for JavaScript testing
+</Card>
+
+<Card title="Debugger for Chrome">
+  Debug JavaScript code running in Google Chrome
+</Card>
+
+## Performance Tuning
+
+For large projects:
+
+```json
+{
+  "js/ts.maxTsServerMemory": 4096,
+  "js/ts.tsserver.maxFileSize": 8192,
+  "editor.maxTokenizationLineLength": 2500
+}
+```
+
+## Troubleshooting
+
+### Restart TypeScript Server
+
+Command Palette > "TypeScript: Restart TS Server"
+
+### Check TypeScript Version
+
+Command Palette > "TypeScript: Select TypeScript Version"
+
+### View Server Logs
+
+```json
+{
+  "js/ts.tsserver.log": "verbose"
+}
+```
+
+<Tip>
+  The TypeScript language server runs in a separate process. Check the Output panel ("TypeScript" channel) for diagnostic information.
+</Tip>

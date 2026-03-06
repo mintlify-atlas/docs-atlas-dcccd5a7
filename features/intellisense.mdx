@@ -1,0 +1,305 @@
+---
+title: IntelliSense
+description: Intelligent code completion with suggestions, parameter info, and documentation
+---
+
+## Overview
+
+IntelliSense is VS Code's intelligent code completion system that provides context-aware suggestions as you type. It combines syntax understanding, type information, and API documentation to help you write code faster and with fewer errors.
+
+## How It Works
+
+IntelliSense is powered by language services that analyze your code in real-time. The suggestion engine uses fuzzy matching and scoring to provide the most relevant completions.
+
+```typescript
+// From VS Code source: src/vs/editor/contrib/suggest/browser/suggest.ts
+export class CompletionItem {
+  // Text label displayed in the suggestion widget
+  readonly textLabel: string;
+  
+  // Lower-case variants for performance
+  readonly labelLow: string;
+  readonly sortTextLow?: string;
+  readonly filterTextLow?: string;
+  
+  // Fuzzy matching score
+  score: FuzzyScore = FuzzyScore.Default;
+  
+  constructor(
+    readonly position: IPosition,
+    readonly completion: languages.CompletionItem,
+    readonly container: languages.CompletionList,
+    readonly provider: languages.CompletionItemProvider
+  ) {
+    this.textLabel = typeof completion.label === 'string'
+      ? completion.label
+      : completion.label?.label;
+    this.labelLow = this.textLabel.toLowerCase();
+  }
+}
+```
+
+## Triggering IntelliSense
+
+<Steps>
+  <Step title="Automatic Trigger">
+    IntelliSense appears automatically as you type. Most languages trigger on identifier characters.
+  </Step>
+  <Step title="Manual Trigger">
+    Press `Ctrl+Space` (Windows/Linux) or `Cmd+Space` (macOS) to manually invoke IntelliSense
+  </Step>
+  <Step title="Trigger Characters">
+    Specific characters like `.` or `->` trigger IntelliSense in appropriate contexts
+  </Step>
+</Steps>
+
+## Suggestion Widget
+
+The suggestion widget provides rich information about each completion item:
+
+<Card title="Widget Features" icon="list">
+- **Icon**: Indicates the type of symbol (function, variable, class, etc.)
+- **Label**: The main suggestion text
+- **Details**: Additional context like type information
+- **Documentation**: Full documentation in the details pane
+</Card>
+
+### Context Keys
+
+The suggestion widget behavior is controlled by context keys:
+
+```typescript
+export const Context = {
+  Visible: historyNavigationVisible,
+  HasFocusedSuggestion: new RawContextKey<boolean>('suggestWidgetHasFocusedSuggestion', false),
+  DetailsVisible: new RawContextKey<boolean>('suggestWidgetDetailsVisible', false),
+  DetailsFocused: new RawContextKey<boolean>('suggestWidgetDetailsFocused', false),
+  MultipleSuggestions: new RawContextKey<boolean>('suggestWidgetMultipleSuggestions', false),
+  AcceptSuggestionsOnEnter: new RawContextKey<boolean>('acceptSuggestionOnEnter', true),
+};
+```
+
+## Keyboard Shortcuts
+
+| Action | Windows/Linux | macOS |
+|--------|---------------|-------|
+| Trigger IntelliSense | `Ctrl+Space` | `Cmd+Space` |
+| Trigger parameter hints | `Ctrl+Shift+Space` | `Cmd+Shift+Space` |
+| Accept suggestion | `Tab` or `Enter` | `Tab` or `Enter` |
+| Insert suggestion | `Ctrl+Enter` | `Cmd+Enter` |
+| Toggle details | `Ctrl+Space` (when open) | `Cmd+Space` (when open) |
+| Navigate suggestions | `Up/Down` arrows | `Up/Down` arrows |
+| Select suggestion | `Enter` | `Enter` |
+
+## Configuration
+
+### Quick Suggestions
+
+Control when IntelliSense appears automatically:
+
+```json
+{
+  "editor.quickSuggestions": {
+    "other": true,
+    "comments": false,
+    "strings": false
+  },
+  "editor.quickSuggestionsDelay": 10,
+  "editor.suggestOnTriggerCharacters": true
+}
+```
+
+<Note>
+The `InternalQuickSuggestionsOptions` interface in the source code defines how suggestions are triggered in different contexts.
+</Note>
+
+### Suggestion Behavior
+
+<CodeGroup>
+```json Accept on Enter
+{
+  "editor.acceptSuggestionOnEnter": "on"
+}
+```
+
+```json Accept on Tab
+{
+  "editor.acceptSuggestionOnCommitCharacter": true,
+  "editor.tabCompletion": "on"
+}
+```
+
+```json Snippet Suggestions
+{
+  "editor.snippetSuggestions": "top",
+  "editor.suggest.snippetsPreventQuickSuggestions": false
+}
+```
+</CodeGroup>
+
+### Filtering and Sorting
+
+Customize how suggestions are filtered and sorted:
+
+```json
+{
+  "editor.suggest.filterGraceful": true,
+  "editor.suggest.localityBonus": true,
+  "editor.suggest.shareSuggestSelections": true,
+  "editor.suggest.showWords": true,
+  "editor.suggest.maxVisibleSuggestions": 12
+}
+```
+
+## IntelliSense Types
+
+### Method and Function Signatures
+
+View parameter information while typing function calls:
+
+```typescript
+// When you type this function call, IntelliSense shows:
+function executeCommand(commandId: string, args?: any[]): Promise<void> {
+  // Implementation
+}
+
+// You'll see parameter hints as you type:
+executeCommand(|) // Shows: (commandId: string, args?: any[])
+```
+
+### Type Information
+
+Hover over variables and expressions to see type information:
+
+```typescript
+const items: CompletionItem[] = [];
+// Hovering shows: const items: CompletionItem[]
+```
+
+### Documentation
+
+View inline documentation for symbols:
+
+```typescript
+/**
+ * Add a new edit operation (a replace operation).
+ * @param range The range to replace (delete). May be empty to represent a simple insert.
+ * @param text The text to replace with. May be null to represent a simple delete.
+ */
+addEditOperation(range: IRange, text: string | null): void;
+```
+
+## Language-Specific IntelliSense
+
+### TypeScript/JavaScript
+
+```json
+{
+  "typescript.suggest.autoImports": true,
+  "typescript.suggest.completeFunctionCalls": true,
+  "typescript.suggest.paths": true,
+  "javascript.suggest.names": true
+}
+```
+
+### Python
+
+```json
+{
+  "python.analysis.completeFunctionParens": true,
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.typeCheckingMode": "basic"
+}
+```
+
+### HTML/CSS
+
+```json
+{
+  "html.suggest.html5": true,
+  "css.completion.triggerPropertyValueCompletion": true,
+  "css.completion.completePropertyWithSemicolon": true
+}
+```
+
+## Advanced Features
+
+### Suggestion Memory
+
+VS Code remembers your suggestion selections to improve future suggestions:
+
+```typescript
+// From source: suggestMemory.ts tracks recently used completions
+// This helps prioritize suggestions you use frequently
+```
+
+<Tip>
+The suggestion memory is stored per workspace and learns from your coding patterns.
+</Tip>
+
+### Commit Characters
+
+Certain characters automatically accept the current suggestion:
+
+```json
+{
+  "editor.acceptSuggestionOnCommitCharacter": true
+}
+```
+
+For example, typing `.` after selecting a suggestion will insert the suggestion and the dot:
+
+```typescript
+console|  // Type 'l' to get 'log' suggestion
+consolelog|  // Press '.' to accept
+console.log|  // Result
+```
+
+### Inline Completions
+
+IntelliSense integrates with inline completion providers like GitHub Copilot:
+
+```json
+{
+  "editor.inlineSuggest.enabled": true,
+  "editor.inlineSuggest.showToolbar": "onHover"
+}
+```
+
+## Troubleshooting
+
+<Warning>
+If IntelliSense is not working, check that the appropriate language extension is installed and enabled.
+</Warning>
+
+### Common Issues
+
+1. **No suggestions appearing**
+   - Verify `editor.quickSuggestions` is enabled
+   - Check that the language mode is correctly detected
+   - Ensure language extensions are installed
+
+2. **Slow suggestions**
+   - Increase `editor.quickSuggestionsDelay`
+   - Check for memory-intensive extensions
+   - Consider excluding large directories from search
+
+3. **Incorrect suggestions**
+   - Update language extensions
+   - Check type definitions are available
+   - Verify workspace configuration
+
+## Performance
+
+IntelliSense is optimized for performance with several techniques:
+
+```typescript
+// Lower-case variants are pre-computed for fast fuzzy matching
+this.labelLow = this.textLabel.toLowerCase();
+this.sortTextLow = completion.sortText && completion.sortText.toLowerCase();
+this.filterTextLow = completion.filterText && completion.filterText.toLowerCase();
+```
+
+<Note>
+The completion engine uses cancellation tokens and incremental updates to maintain responsiveness even with large completion lists.
+</Note>

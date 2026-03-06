@@ -1,0 +1,331 @@
+---
+title: Extension Marketplace
+description: Discover, install, and manage VS Code extensions from the marketplace
+---
+
+## Overview
+
+The Visual Studio Code Marketplace hosts thousands of extensions that enhance the editor's functionality. You can browse, install, and manage extensions directly from VS Code or through the web interface.
+
+## Browsing Extensions
+
+### From VS Code
+
+Access the Extensions view in multiple ways:
+
+<Steps>
+  <Step title="Open Extensions View">
+    - Click the Extensions icon in the Activity Bar (left sidebar)
+    - Use keyboard shortcut: `Ctrl+Shift+X` (Windows/Linux) or `Cmd+Shift+X` (macOS)
+    - Open Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) and run `Extensions: Install Extensions`
+  </Step>
+  
+  <Step title="Search for Extensions">
+    Type keywords in the search box to find extensions by:
+    - Name or description
+    - Category (e.g., "@category:themes")
+    - Publisher (e.g., "@publisher:microsoft")
+    - Tag (e.g., "@tag:python")
+  </Step>
+  
+  <Step title="Filter Results">
+    Use built-in filters to narrow your search:
+    - `@installed` - Show installed extensions
+    - `@enabled` - Show enabled extensions
+    - `@disabled` - Show disabled extensions
+    - `@builtin` - Show built-in extensions
+    - `@recommended` - Show recommended extensions
+    - `@popular` - Show popular extensions
+    - `@sort:installs` - Sort by installation count
+    - `@sort:rating` - Sort by rating
+  </Step>
+</Steps>
+
+### From the Web
+
+Visit the [VS Code Marketplace](https://marketplace.visualstudio.com/vscode) to browse extensions in your web browser:
+
+- Search and filter by category
+- Read detailed descriptions and reviews
+- View source code repositories
+- Check version history and changelog
+- See publisher information and verification status
+
+## Installing Extensions
+
+### Install from VS Code
+
+<Steps>
+  <Step title="Find the Extension">
+    Search for the extension in the Extensions view
+  </Step>
+  
+  <Step title="Click Install">
+    Click the green "Install" button on the extension's listing
+  </Step>
+  
+  <Step title="Wait for Installation">
+    VS Code downloads and installs the extension automatically
+  </Step>
+  
+  <Step title="Reload if Required">
+    Some extensions require reloading VS Code. Click "Reload" if prompted
+  </Step>
+</Steps>
+
+### Install from VSIX File
+
+You can install extensions from `.vsix` files:
+
+<Steps>
+  <Step title="Open Command Palette">
+    Press `Ctrl+Shift+P` (Windows/Linux) or `Cmd+Shift+P` (macOS)
+  </Step>
+  
+  <Step title="Run Install Command">
+    Type and select `Extensions: Install from VSIX...`
+  </Step>
+  
+  <Step title="Select File">
+    Browse to and select the `.vsix` file
+  </Step>
+</Steps>
+
+### Install from Command Line
+
+Use the `code` command-line interface:
+
+<CodeGroup>
+```bash Install Extension
+code --install-extension publisher.extension-name
+```
+
+```bash Install from VSIX
+code --install-extension /path/to/extension.vsix
+```
+
+```bash List Installed Extensions
+code --list-extensions
+```
+</CodeGroup>
+
+## Managing Extensions
+
+### Enable/Disable Extensions
+
+Control which extensions are active:
+
+<Steps>
+  <Step title="Find Extension">
+    Locate the extension in the Extensions view
+  </Step>
+  
+  <Step title="Use Gear Icon">
+    Click the gear icon next to the extension
+  </Step>
+  
+  <Step title="Select Action">
+    Choose:
+    - **Disable** - Turn off globally
+    - **Disable (Workspace)** - Turn off for current workspace only
+    - **Enable** - Turn on the extension
+    - **Enable (Workspace)** - Turn on for current workspace only
+  </Step>
+</Steps>
+
+<Note>
+Disabling extensions you don't use can improve VS Code's startup time and performance.
+</Note>
+
+### Update Extensions
+
+Extensions update automatically by default:
+
+- Check for updates manually: Click the gear icon → "Check for Updates"
+- Update all extensions: Click "Update All Extensions" button when updates are available
+- Disable auto-update: Settings → `extensions.autoUpdate` → Set to `false`
+
+### Uninstall Extensions
+
+<Steps>
+  <Step title="Find Extension">
+    Open the Extensions view and locate the extension
+  </Step>
+  
+  <Step title="Click Uninstall">
+    Click the "Uninstall" button next to the extension
+  </Step>
+  
+  <Step title="Confirm">
+    Confirm the uninstallation when prompted
+  </Step>
+</Steps>
+
+Or use the command line:
+
+<CodeGroup>
+```bash Uninstall Extension
+code --uninstall-extension publisher.extension-name
+```
+</CodeGroup>
+
+## Extension Recommendations
+
+### Workspace Recommendations
+
+Share recommended extensions with your team by creating an `extensions.json` file:
+
+<Steps>
+  <Step title="Create Recommendations File">
+    Create `.vscode/extensions.json` in your project root
+  </Step>
+  
+  <Step title="Add Extensions">
+    List recommended extension IDs:
+    
+    ```json .vscode/extensions.json
+    {
+      "recommendations": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-typescript-next"
+      ],
+      "unwantedRecommendations": [
+        "ms-vscode.csharp"
+      ]
+    }
+    ```
+  </Step>
+  
+  <Step title="Team Members See Prompt">
+    When team members open the workspace, they'll see a prompt to install recommended extensions
+  </Step>
+</Steps>
+
+### Personal Recommendations
+
+VS Code suggests extensions based on:
+
+- Files you open (e.g., Python files suggest Python extensions)
+- Workspace contents (e.g., `package.json` suggests Node.js extensions)
+- Popular extensions in your language/framework
+
+<Tip>
+Accept recommendations for languages you work with frequently. VS Code's suggestions are based on file types and installed tools.
+</Tip>
+
+## Extension Details
+
+Click an extension to view detailed information:
+
+- **Overview** - Description, features, and getting started
+- **Feature Contributions** - Commands, settings, and other contributions
+- **Changelog** - Version history and updates
+- **Dependencies** - Required extensions
+- **Extension Pack** - If the extension bundles multiple extensions
+- **Rating & Reviews** - User feedback and ratings
+- **Resources** - Links to repository, issues, license
+
+## Configuring Extensions
+
+Many extensions add settings you can customize:
+
+<Steps>
+  <Step title="Open Settings">
+    Go to File → Preferences → Settings (or `Ctrl+,` / `Cmd+,`)
+  </Step>
+  
+  <Step title="Search Extension Name">
+    Type the extension name to filter its settings
+  </Step>
+  
+  <Step title="Modify Settings">
+    Adjust settings in the UI or edit `settings.json` directly
+  </Step>
+</Steps>
+
+<CodeGroup>
+```json Example: Emmet Settings
+{
+  "emmet.showExpandedAbbreviation": "always",
+  "emmet.triggerExpansionOnTab": true,
+  "emmet.includeLanguages": {
+    "javascript": "javascriptreact"
+  }
+}
+```
+
+```json Example: Git Settings
+{
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  "git.enableSmartCommit": true
+}
+```
+</CodeGroup>
+
+## Extension Packs
+
+Extension packs bundle multiple related extensions together. Installing an extension pack installs all included extensions.
+
+Examples from VS Code's ecosystem:
+- Language packs (Python, Java, C++)
+- Framework packs (Vue, React, Angular)
+- Tool packs (Docker, Kubernetes, Azure)
+
+<Warning>
+Be careful when installing large extension packs. They may include extensions you don't need, which can slow down VS Code.
+</Warning>
+
+## Finding Quality Extensions
+
+Look for these indicators of high-quality extensions:
+
+✓ **Verified Publisher** - Publisher identity verified by Microsoft  
+✓ **High Rating** - 4+ stars with many reviews  
+✓ **Active Maintenance** - Recent updates and changelog  
+✓ **Good Documentation** - Clear README and examples  
+✓ **Many Installs** - Popular with the community  
+✓ **Open Source** - Source code available for inspection  
+
+## Troubleshooting Extensions
+
+### Extension Not Working
+
+<Steps>
+  <Step title="Check if Enabled">
+    Verify the extension is enabled in the Extensions view
+  </Step>
+  
+  <Step title="Reload Window">
+    Run `Developer: Reload Window` from Command Palette
+  </Step>
+  
+  <Step title="Check Output">
+    Open Output panel and select the extension's channel to see logs
+  </Step>
+  
+  <Step title="Report Issue">
+    If problems persist, report an issue on the extension's repository
+  </Step>
+</Steps>
+
+### Performance Issues
+
+If VS Code feels slow:
+
+1. Check extension startup times: Run `Developer: Show Running Extensions`
+2. Disable extensions one by one to identify the culprit
+3. Consider alternatives or report performance issues to the extension author
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Create Extensions" href="./creating">
+    Learn how to build your own VS Code extension
+  </Card>
+  
+  <Card title="Publish Extensions" href="./publishing">
+    Share your extension on the marketplace
+  </Card>
+</CardGroup>

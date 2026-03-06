@@ -1,0 +1,438 @@
+---
+title: Integrated Terminal
+description: Built-in terminal with multiple shells, split panes, and task integration
+---
+
+## Overview
+
+Visual Studio Code includes a fully-featured integrated terminal that allows you to run command-line tools and tasks without leaving the editor. The terminal supports multiple shells, split panes, and deep integration with VS Code features.
+
+## Getting Started
+
+<Steps>
+  <Step title="Open Terminal">
+    Press `` Ctrl+` `` (Windows/Linux) or `` Cmd+` `` (macOS), or select Terminal > New Terminal from the menu
+  </Step>
+  <Step title="Create Additional Terminals">
+    Click the `+` icon in the terminal panel or press `Ctrl+Shift+` ` (Windows/Linux) / `Cmd+Shift+` ` (macOS)
+  </Step>
+  <Step title="Switch Between Terminals">
+    Use the dropdown menu in the terminal panel or navigate with keyboard shortcuts
+  </Step>
+</Steps>
+
+## Terminal Architecture
+
+The terminal is built on xterm.js and integrates deeply with VS Code:
+
+```typescript
+// From VS Code source: src/vs/workbench/contrib/terminal/browser/terminalActions.ts
+import { KeyCode, KeyMod, KeyChord } from '../../../../base/common/keyCodes.js';
+import { TerminalLocation, TerminalSettingId } from '../../../../platform/terminal/common/terminal.js';
+
+export interface ITerminalInstance {
+  readonly instanceId: number;
+  readonly resource: URI;
+  readonly title: string;
+  readonly shellType: string;
+  
+  focus(): void;
+  sendText(text: string, addNewLine: boolean): void;
+  dispose(): void;
+}
+```
+
+## Terminal Locations
+
+Terminals can be opened in different locations:
+
+```typescript
+export enum TerminalLocation {
+  Panel = 1,      // Terminal panel at bottom
+  Editor = 2,     // Terminal as editor
+  TerminalView = 3 // Dedicated terminal view
+}
+```
+
+<Card title="Terminal Placement Options" icon="window">
+- **Panel**: Default location at the bottom of the window
+- **Editor Area**: Open terminal as a regular editor tab
+- **Side Panel**: Dedicated terminal view in the sidebar
+</Card>
+
+## Keyboard Shortcuts
+
+### Terminal Management
+
+| Action | Windows/Linux | macOS |
+|--------|---------------|-------|
+| Toggle Terminal | `` Ctrl+` `` | `` Cmd+` `` |
+| Create New Terminal | `` Ctrl+Shift+` `` | `` Cmd+Shift+` `` |
+| Kill Terminal | `Ctrl+Shift+K` | `Cmd+Shift+K` |
+| Focus Terminal | `` Ctrl+` `` | `` Cmd+` `` |
+| Focus Next Terminal | `Ctrl+PageDown` | `Cmd+PageDown` |
+| Focus Previous Terminal | `Ctrl+PageUp` | `Cmd+PageUp` |
+| Scroll Up | `Ctrl+Alt+PageUp` | `Cmd+Option+PageUp` |
+| Scroll Down | `Ctrl+Alt+PageDown` | `Cmd+Option+PageDown` |
+
+### Split Terminals
+
+```typescript
+export async function getCwdForSplit(
+  instance: ITerminalInstance,
+  folders: IWorkspaceFolder[] | undefined,
+  commandService: ICommandService,
+  configService: ITerminalConfigurationService
+): Promise<string | URI | undefined> {
+  switch (configService.config.splitCwd) {
+    case 'workspaceRoot':
+      return folders?.[0]?.uri;
+    case 'initial':
+      return instance.getInitialCwd();
+    case 'inherited':
+      return instance.getSpeculativeCwd();
+  }
+}
+```
+
+<Steps>
+  <Step title="Split Terminal">
+    Click the split icon or press `Ctrl+Shift+5` (Windows/Linux) / `Cmd+Shift+5` (macOS)
+  </Step>
+  <Step title="Navigate Splits">
+    Use `Alt+Arrow Keys` to move focus between split terminals
+  </Step>
+  <Step title="Resize Splits">
+    Drag the divider between split terminals to resize
+  </Step>
+</Steps>
+
+## Terminal Profiles
+
+Create custom terminal profiles for different shells and configurations:
+
+```json
+{
+  "terminal.integrated.profiles.windows": {
+    "PowerShell": {
+      "source": "PowerShell",
+      "icon": "terminal-powershell"
+    },
+    "Git Bash": {
+      "path": "C:\\Program Files\\Git\\bin\\bash.exe",
+      "icon": "terminal-bash"
+    },
+    "Command Prompt": {
+      "path": "${env:windir}\\System32\\cmd.exe",
+      "icon": "terminal-cmd"
+    }
+  },
+  "terminal.integrated.defaultProfile.windows": "PowerShell"
+}
+```
+
+<CodeGroup>
+```json Linux
+{
+  "terminal.integrated.profiles.linux": {
+    "bash": {
+      "path": "bash",
+      "icon": "terminal-bash"
+    },
+    "zsh": {
+      "path": "zsh",
+      "icon": "terminal-bash"
+    },
+    "fish": {
+      "path": "fish"
+    }
+  },
+  "terminal.integrated.defaultProfile.linux": "bash"
+}
+```
+
+```json macOS
+{
+  "terminal.integrated.profiles.osx": {
+    "bash": {
+      "path": "bash",
+      "icon": "terminal-bash"
+    },
+    "zsh": {
+      "path": "zsh",
+      "icon": "terminal-bash"
+    }
+  },
+  "terminal.integrated.defaultProfile.osx": "zsh"
+}
+```
+</CodeGroup>
+
+## Configuration
+
+### Appearance
+
+Customize terminal appearance:
+
+```json
+{
+  "terminal.integrated.fontSize": 14,
+  "terminal.integrated.fontFamily": "'Fira Code', Consolas, monospace",
+  "terminal.integrated.fontWeight": "normal",
+  "terminal.integrated.lineHeight": 1.2,
+  "terminal.integrated.letterSpacing": 0,
+  "terminal.integrated.cursorBlinking": true,
+  "terminal.integrated.cursorStyle": "block",
+  "terminal.integrated.cursorWidth": 1
+}
+```
+
+### Behavior
+
+```json
+{
+  "terminal.integrated.scrollback": 1000,
+  "terminal.integrated.confirmOnExit": "hasChildProcesses",
+  "terminal.integrated.confirmOnKill": "editor",
+  "terminal.integrated.copyOnSelection": false,
+  "terminal.integrated.rightClickBehavior": "default",
+  "terminal.integrated.allowChords": true,
+  "terminal.integrated.allowMenubarMnemonics": true
+}
+```
+
+### Shell Integration
+
+Enable enhanced shell integration features:
+
+```json
+{
+  "terminal.integrated.shellIntegration.enabled": true,
+  "terminal.integrated.shellIntegration.decorationsEnabled": "both",
+  "terminal.integrated.shellIntegration.history": 100
+}
+```
+
+<Note>
+Shell integration provides features like command detection, navigation, and suggested commands. It requires shell-specific configuration.
+</Note>
+
+## Advanced Features
+
+### Terminal Tabs
+
+Organize terminals with tabs:
+
+```typescript
+export const CONTEXT_TERMINAL_ACTIVE = new RawContextKey<boolean>(
+  'taskTerminalActive', 
+  false, 
+  'Whether the active terminal is a task terminal'
+);
+```
+
+<Tip>
+Rename terminals by right-clicking on the tab and selecting "Rename" for better organization.
+</Tip>
+
+### Working Directory
+
+Control the initial working directory:
+
+```json
+{
+  "terminal.integrated.cwd": "${workspaceFolder}",
+  "terminal.integrated.splitCwd": "workspaceRoot"
+}
+```
+
+Options for `splitCwd`:
+- `workspaceRoot`: Use the workspace root
+- `initial`: Use the initial CWD of the parent terminal
+- `inherited`: Use the current CWD of the parent terminal
+
+### Environment Variables
+
+Set custom environment variables:
+
+```json
+{
+  "terminal.integrated.env.windows": {
+    "MY_VAR": "value",
+    "PATH": "${env:PATH};C:\\custom\\path"
+  },
+  "terminal.integrated.env.linux": {
+    "MY_VAR": "value",
+    "PATH": "${env:PATH}:/custom/path"
+  },
+  "terminal.integrated.env.osx": {
+    "MY_VAR": "value",
+    "PATH": "${env:PATH}:/custom/path"
+  }
+}
+```
+
+### Terminal Links
+
+Automatic link detection and handling:
+
+```json
+{
+  "terminal.integrated.enableFileLinks": true,
+  "terminal.integrated.localEchoEnabled": "auto",
+  "terminal.integrated.localEchoLatencyThreshold": 30
+}
+```
+
+<Card title="Automatic Link Detection" icon="link">
+- **File paths**: Click to open files
+- **URLs**: Click to open in browser
+- **Line numbers**: Navigate to specific lines (e.g., `file.js:10`)
+- **Column positions**: Precise navigation (e.g., `file.js:10:5`)
+</Card>
+
+## Task Integration
+
+Terminals integrate with VS Code tasks:
+
+```typescript
+export const TASK_RUNNING_STATE = new RawContextKey<boolean>(
+  'taskRunning', 
+  false, 
+  'Whether a task is currently running'
+);
+
+export const TASK_TERMINAL_ACTIVE = new RawContextKey<boolean>(
+  'taskTerminalActive', 
+  false, 
+  'Whether the active terminal is a task terminal'
+);
+```
+
+<Note>
+Terminals created by tasks are marked with special indicators and can be automatically closed when tasks complete.
+</Note>
+
+## Buffer and Rendering
+
+### GPU Acceleration
+
+Enable GPU acceleration for better performance:
+
+```json
+{
+  "terminal.integrated.gpuAcceleration": "auto"
+}
+```
+
+Options:
+- `auto`: Automatically detect and use GPU acceleration
+- `on`: Always use GPU acceleration
+- `off`: Disable GPU acceleration
+- `canvas`: Use canvas renderer
+
+### Persistence
+
+Control terminal session persistence:
+
+```json
+{
+  "terminal.integrated.enablePersistentSessions": true,
+  "terminal.integrated.persistentSessionReviveProcess": "onExit"
+}
+```
+
+<Warning>
+Persistent sessions store terminal buffers to disk. Disable this feature if working with sensitive data.
+</Warning>
+
+## Context Keys
+
+Terminal behavior is controlled by context keys:
+
+```typescript
+export const sharedWhenClause = {
+  terminalAvailable: ContextKeyExpr.or(
+    TerminalContextKeys.processSupported, 
+    TerminalContextKeys.terminalHasBeenCreated
+  ),
+  terminalAvailable_and_opened: ContextKeyExpr.and(
+    terminalAvailable, 
+    TerminalContextKeys.isOpen
+  ),
+  focusInAny_and_normalBuffer: ContextKeyExpr.and(
+    TerminalContextKeys.focusInAny, 
+    TerminalContextKeys.altBufferActive.negate()
+  )
+};
+```
+
+## Command Line Arguments
+
+Pass arguments when creating terminals:
+
+```typescript
+export interface ICreateTerminalOptions {
+  cwd?: string | URI;
+  env?: { [key: string]: string | null };
+  name?: string;
+  shellPath?: string;
+  shellArgs?: string | string[];
+  icon?: ThemeIcon | URI | { light: URI; dark: URI };
+  color?: ThemeColor;
+  location?: TerminalLocation | { viewColumn: number };
+}
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Shell not found**
+   - Verify shell path in settings
+   - Check that shell executable exists
+   - Use absolute paths in terminal profiles
+
+2. **Wrong working directory**
+   - Check `terminal.integrated.cwd` setting
+   - Verify workspace folder is correct
+   - Use `${workspaceFolder}` variable
+
+3. **Character encoding issues**
+   ```json
+   {
+     "terminal.integrated.encoding": "utf8"
+   }
+   ```
+
+4. **Performance issues**
+   - Reduce scrollback: `"terminal.integrated.scrollback": 1000`
+   - Disable GPU acceleration: `"terminal.integrated.gpuAcceleration": "off"`
+   - Limit number of terminals
+
+<Tip>
+Enable terminal logging for debugging: `"terminal.integrated.logLevel": "debug"`
+</Tip>
+
+## Best Practices
+
+<Card title="Terminal Workflow Tips" icon="lightbulb">
+1. Use terminal profiles for different workflows
+2. Name terminals for easy identification
+3. Split terminals instead of creating new ones
+4. Use shell integration for better navigation
+5. Configure keyboard shortcuts for common commands
+</Card>
+
+### Security
+
+<Warning>
+Be cautious when pasting commands from untrusted sources. VS Code warns about multi-line pastes by default.
+</Warning>
+
+```json
+{
+  "terminal.integrated.enableMultiLinePasteWarning": true,
+  "terminal.integrated.commandsToSkipShell": []
+}
+```

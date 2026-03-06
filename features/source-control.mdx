@@ -1,0 +1,421 @@
+---
+title: Source Control
+description: Integrated Git support with staging, committing, branching, and merge conflict resolution
+---
+
+## Overview
+
+Visual Studio Code has integrated source control management (SCM) with Git support built-in. The Source Control view provides a streamlined interface for common Git operations without leaving the editor.
+
+## Getting Started
+
+<Steps>
+  <Step title="Open Source Control View">
+    Click the Source Control icon in the Activity Bar or press `Ctrl+Shift+G` (Windows/Linux) or `Cmd+Shift+G` (macOS)
+  </Step>
+  <Step title="Initialize Repository">
+    Click "Initialize Repository" if you don't have a Git repository yet
+  </Step>
+  <Step title="Stage Changes">
+    Click the `+` icon next to changed files to stage them
+  </Step>
+  <Step title="Commit Changes">
+    Enter a commit message and press `Ctrl+Enter` (Windows/Linux) or `Cmd+Enter` (macOS)
+  </Step>
+</Steps>
+
+## Source Control Architecture
+
+VS Code's SCM system is designed to support multiple providers:
+
+```typescript
+// From VS Code source: src/vs/workbench/contrib/scm/common/scm.ts
+export const VIEWLET_ID = 'workbench.view.scm';
+export const VIEW_PANE_ID = 'workbench.scm';
+export const REPOSITORIES_VIEW_PANE_ID = 'workbench.scm.repositories';
+export const HISTORY_VIEW_PANE_ID = 'workbench.scm.history';
+
+export interface ISCMProvider extends IDisposable {
+  readonly id: string;
+  readonly label: string;
+  readonly rootUri?: URI;
+  readonly groups: readonly ISCMResourceGroup[];
+  readonly inputBoxTextModel: ITextModel;
+  readonly count: IObservable<number | undefined>;
+  readonly commitTemplate: IObservable<string>;
+  readonly historyProvider: IObservable<ISCMHistoryProvider | undefined>;
+}
+```
+
+## View Modes
+
+Switch between list and tree view for better organization:
+
+```typescript
+export const enum ViewMode {
+  List = 'list',
+  Tree = 'tree'
+}
+```
+
+<CodeGroup>
+```json List View
+{
+  "scm.defaultViewMode": "list"
+}
+```
+
+```json Tree View
+{
+  "scm.defaultViewMode": "tree",
+  "scm.defaultViewSortKey": "path"
+}
+```
+</CodeGroup>
+
+## Resource Groups
+
+Changes are organized into groups:
+
+```typescript
+export interface ISCMResourceGroup {
+  readonly id: string;
+  readonly provider: ISCMProvider;
+  readonly resources: readonly ISCMResource[];
+  readonly label: string;
+  readonly hideWhenEmpty: boolean;
+}
+
+export interface ISCMResource {
+  readonly resourceGroup: ISCMResourceGroup;
+  readonly sourceUri: URI;
+  readonly decorations: ISCMResourceDecorations;
+  open(preserveFocus: boolean): Promise<void>;
+}
+```
+
+<Card title="Common Resource Groups" icon="folder-tree">
+- **Changes**: Modified files not yet staged
+- **Staged Changes**: Files ready to commit
+- **Merge Changes**: Files with merge conflicts
+- **Untracked**: New files not yet added to Git
+</Card>
+
+## Common Operations
+
+### Staging and Unstaging
+
+<Steps>
+  <Step title="Stage Individual Files">
+    Click the `+` icon next to a file in the Changes section
+  </Step>
+  <Step title="Stage All Changes">
+    Click the `+` icon next to "Changes" header
+  </Step>
+  <Step title="Unstage Files">
+    Click the `-` icon next to a file in the Staged Changes section
+  </Step>
+  <Step title="Stage Selected Lines">
+    Select lines in the editor, right-click, and choose "Stage Selected Ranges"
+  </Step>
+</Steps>
+
+### Committing
+
+Commit your staged changes with a message:
+
+```typescript
+// The commit template is provided by the SCM provider
+readonly commitTemplate: IObservable<string>;
+```
+
+<Tip>
+Use `Ctrl+Enter` (Windows/Linux) or `Cmd+Enter` (macOS) to commit. The commit input box supports multi-line messages.
+</Tip>
+
+### Keyboard Shortcuts
+
+| Action | Windows/Linux | macOS |
+|--------|---------------|-------|
+| Open Source Control | `Ctrl+Shift+G` | `Cmd+Shift+G` |
+| Commit | `Ctrl+Enter` | `Cmd+Enter` |
+| Refresh | `Ctrl+R` | `Cmd+R` |
+| Stage changes | `Ctrl+K Ctrl+A` | `Cmd+K Cmd+A` |
+| Undo last commit | `Ctrl+K Ctrl+U` | `Cmd+K Cmd+U` |
+
+## Diff Editor
+
+View changes in a side-by-side diff editor:
+
+```typescript
+export interface ISCMResource {
+  readonly multiDiffEditorOriginalUri: URI | undefined;
+  readonly multiDiffEditorModifiedUri: URI | undefined;
+}
+```
+
+<Note>
+Click on any changed file to open the diff editor showing the previous and current versions.
+</Note>
+
+### Navigation in Diff View
+
+- **F7**: Go to next change
+- **Shift+F7**: Go to previous change
+- **Alt+F5**: Go to next conflict
+- **Shift+Alt+F5**: Go to previous conflict
+
+## Branching and Merging
+
+### Branch Operations
+
+Access branch operations from the Source Control menu or status bar:
+
+<Steps>
+  <Step title="View Current Branch">
+    Check the branch name in the status bar (bottom left)
+  </Step>
+  <Step title="Switch Branch">
+    Click the branch name and select a different branch
+  </Step>
+  <Step title="Create Branch">
+    Click branch name, select "Create new branch", and enter a name
+  </Step>
+  <Step title="Merge Branch">
+    Use Git commands from the Command Palette (`Ctrl+Shift+P`)
+  </Step>
+</Steps>
+
+### Merge Conflict Resolution
+
+When conflicts occur, VS Code provides inline tools:
+
+```markdown
+<<<<<<< HEAD
+const version = '1.0.0';
+=======
+const version = '1.1.0';
+>>>>>>> feature-branch
+```
+
+<Card title="Conflict Resolution Actions" icon="git-merge">
+- **Accept Current Change**: Keep the HEAD version
+- **Accept Incoming Change**: Keep the merging branch version
+- **Accept Both Changes**: Keep both versions
+- **Compare Changes**: Open in diff editor
+</Card>
+
+## Git Commands
+
+Access Git commands via the Command Palette:
+
+```text
+Git: Clone
+Git: Pull
+Git: Push
+Git: Fetch
+Git: Checkout to...
+Git: Create Branch...
+Git: Delete Branch...
+Git: Merge Branch...
+Git: Rebase Branch...
+Git: Stash
+Git: Pop Stash
+Git: View History
+```
+
+## Configuration
+
+### Git Settings
+
+```json
+{
+  "git.enabled": true,
+  "git.path": null,
+  "git.autorefresh": true,
+  "git.autofetch": true,
+  "git.autofetchPeriod": 180,
+  "git.confirmSync": true,
+  "git.enableSmartCommit": false,
+  "git.enableCommitSigning": false,
+  "git.defaultCloneDirectory": null
+}
+```
+
+### SCM View Settings
+
+<CodeGroup>
+```json Compact View
+{
+  "scm.diffDecorations": "all",
+  "scm.diffDecorationsGutterWidth": 3,
+  "scm.alwaysShowRepositories": false,
+  "scm.repositories.visible": 10
+}
+```
+
+```json Detailed View
+{
+  "scm.diffDecorations": "all",
+  "scm.diffDecorationsGutterWidth": 5,
+  "scm.alwaysShowActions": true,
+  "scm.alwaysShowRepositories": true
+}
+```
+</CodeGroup>
+
+### Decorations
+
+Customize how changes are displayed in the editor:
+
+```json
+{
+  "git.decorations.enabled": true,
+  "scm.diffDecorations": "all",
+  "scm.diffDecorationsGutterVisibility": "always",
+  "scm.diffDecorationsGutterAction": "diff"
+}
+```
+
+```typescript
+export interface ISCMResourceDecorations {
+  icon?: URI | ThemeIcon;
+  iconDark?: URI | ThemeIcon;
+  tooltip?: string;
+  strikeThrough?: boolean;
+  faded?: boolean;
+}
+```
+
+## History and Timeline
+
+View file history and timeline:
+
+```typescript
+readonly historyProvider: IObservable<ISCMHistoryProvider | undefined>;
+```
+
+<Steps>
+  <Step title="View File History">
+    Right-click a file and select "View File History"
+  </Step>
+  <Step title="Timeline View">
+    Open the Timeline view in the Explorer sidebar to see file changes over time
+  </Step>
+  <Step title="Compare with Previous">
+    Right-click a commit in the timeline to compare with current version
+  </Step>
+</Steps>
+
+## Advanced Features
+
+### Baseline Resources
+
+Compare against different baselines:
+
+```typescript
+export interface IBaselineResourceProvider {
+  getBaselineResource(resource: URI): Promise<URI>;
+}
+```
+
+### Multi-Repository Support
+
+Work with multiple Git repositories simultaneously:
+
+```json
+{
+  "scm.alwaysShowRepositories": true,
+  "scm.repositories.visible": 5
+}
+```
+
+<Note>
+VS Code automatically detects multiple Git repositories in your workspace and displays them separately in the Source Control view.
+</Note>
+
+### Action Buttons
+
+Customize the source control action button:
+
+```typescript
+readonly actionButton: IObservable<ISCMActionButtonDescriptor | undefined>;
+readonly statusBarCommands: IObservable<readonly Command[] | undefined>;
+```
+
+## Git Integration
+
+### .gitignore Support
+
+VS Code respects `.gitignore` files and provides:
+
+- Syntax highlighting for `.gitignore` files
+- Auto-completion of patterns
+- Grayed-out ignored files in Explorer
+
+### Git Output
+
+View detailed Git command output:
+
+<Steps>
+  <Step title="Open Output Panel">
+    Press `Ctrl+Shift+U` (Windows/Linux) or `Cmd+Shift+U` (macOS)
+  </Step>
+  <Step title="Select Git">
+    Choose "Git" from the dropdown menu
+  </Step>
+  <Step title="View Commands">
+    See all Git commands executed by VS Code
+  </Step>
+</Steps>
+
+## Third-Party SCM Providers
+
+Extend source control support beyond Git:
+
+<Card title="Popular SCM Extensions" icon="puzzle">
+- **GitHub Pull Requests and Issues**: Manage PRs and issues
+- **GitLens**: Advanced Git features and visualization
+- **SVN**: Subversion support
+- **Perforce**: P4 integration
+</Card>
+
+## Best Practices
+
+<Tip>
+Use meaningful commit messages that describe what changed and why. The first line should be a brief summary (50 chars or less).
+</Tip>
+
+<Warning>
+Avoid committing sensitive information like passwords, API keys, or personal data. Use environment variables and `.gitignore` instead.
+</Warning>
+
+### Commit Message Format
+
+```text
+Short summary (50 chars or less)
+
+More detailed explanation if needed. Wrap at 72 characters.
+Explain the problem this commit solves and why you made
+the changes you did.
+
+- Bullet points are okay too
+- Use imperative mood: "Add feature" not "Added feature"
+```
+
+## Troubleshooting
+
+1. **Changes not appearing**
+   - Click the refresh icon in the Source Control view
+   - Check that Git is installed and in your PATH
+   - Verify you're in a Git repository
+
+2. **Authentication issues**
+   - Configure Git credentials: `git config --global user.name "Your Name"`
+   - Use SSH keys or credential manager
+   - Check Git extension settings
+
+3. **Performance with large repos**
+   - Limit scope with `git.scanRepositories`
+   - Disable auto-fetch: `"git.autofetch": false`
+   - Use sparse checkout for monorepos

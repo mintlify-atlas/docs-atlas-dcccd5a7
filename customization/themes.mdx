@@ -1,0 +1,412 @@
+---
+title: Themes
+description: Customize colors and icons in VS Code
+---
+
+VS Code supports extensive theming to personalize your editor's appearance. You can install themes from the Marketplace, customize existing themes, or create your own.
+
+## Types of Themes
+
+VS Code supports three types of themes:
+
+<CardGroup cols={3}>
+  <Card title="Color Themes" icon="palette">
+    Control editor colors, syntax highlighting, and UI elements
+  </Card>
+  <Card title="File Icon Themes" icon="folder-open">
+    Change file and folder icons in the Explorer
+  </Card>
+  <Card title="Product Icon Themes" icon="icons">
+    Customize icons used throughout the VS Code UI
+  </Card>
+</CardGroup>
+
+## Installing Themes
+
+<Steps>
+  <Step title="Open Extensions View">
+    Press `Ctrl+Shift+X` (Windows/Linux) or `Cmd+Shift+X` (macOS) to open the Extensions view.
+  </Step>
+  
+  <Step title="Search for Themes">
+    Type `@category:themes` in the search box to filter for themes only.
+    
+    You can also search by specific keywords like "dark theme" or "icon theme".
+  </Step>
+  
+  <Step title="Install and Apply">
+    Click **Install** on a theme, then click **Set Color Theme** or **Set File Icon Theme** to apply it.
+  </Step>
+</Steps>
+
+### Installing via Command Palette
+
+You can also browse and install themes directly:
+
+1. Open Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
+2. Type "Preferences: Color Theme" to browse color themes
+3. Type "Preferences: File Icon Theme" for icon themes
+4. Use arrow keys to preview themes live
+5. Press `Enter` to apply
+
+<Tip>
+Themes are previewed in real-time as you navigate through the list, making it easy to find the perfect theme.
+</Tip>
+
+## Switching Themes
+
+### Color Themes
+
+**Quick Method:**
+- Press `Ctrl+K Ctrl+T` (Windows/Linux) or `Cmd+K Cmd+T` (macOS)
+- Browse available themes with live preview
+- Press `Enter` to apply
+
+**Settings Method:**
+
+```json settings.json
+{
+  "workbench.colorTheme": "Monokai"
+}
+```
+
+### File Icon Themes
+
+```json settings.json
+{
+  "workbench.iconTheme": "vs-seti"
+}
+```
+
+### Product Icon Themes
+
+```json settings.json
+{
+  "workbench.productIconTheme": "Default"
+}
+```
+
+## Built-in Themes
+
+VS Code includes several high-quality themes by default:
+
+### Dark Themes
+- **Dark+ (default dark)** - VS Code's default dark theme
+- **Monokai** - Popular dark theme with vibrant colors
+- **Monokai Dimmed** - Subdued version of Monokai
+- **Tomorrow Night Blue** - Dark blue color scheme
+- **Abyss** - Very dark theme with blue accents
+
+### Light Themes
+- **Light+ (default light)** - VS Code's default light theme
+- **Quiet Light** - Soft, muted light theme
+- **Solarized Light** - Popular light theme with warm tones
+
+### High Contrast Themes
+- **High Contrast** - Maximum contrast for accessibility
+- **High Contrast Light** - High contrast light theme
+
+## Theme Structure
+
+Color themes are defined in JSON format. Here's an example from the Monokai theme:
+
+```json monokai-color-theme.json
+{
+  "type": "dark",
+  "colors": {
+    "editor.background": "#272822",
+    "editor.foreground": "#f8f8f2",
+    "editor.selectionBackground": "#878b9180",
+    "editor.lineHighlightBackground": "#3e3d32",
+    "editorCursor.foreground": "#f8f8f0",
+    "editorWhitespace.foreground": "#464741",
+    "list.activeSelectionBackground": "#75715E",
+    "list.hoverBackground": "#3e3d32",
+    "statusBar.background": "#414339",
+    "tab.inactiveBackground": "#34352f",
+    "tab.border": "#1e1f1c"
+  },
+  "tokenColors": [
+    {
+      "scope": "comment",
+      "settings": {
+        "foreground": "#75715e"
+      }
+    },
+    {
+      "scope": "string",
+      "settings": {
+        "foreground": "#e6db74"
+      }
+    },
+    {
+      "scope": "keyword",
+      "settings": {
+        "foreground": "#f92672"
+      }
+    }
+  ]
+}
+```
+
+## Customizing Themes
+
+You can override specific colors from any theme without creating a new theme:
+
+### Customizing Workbench Colors
+
+```json settings.json
+{
+  "workbench.colorCustomizations": {
+    "editor.background": "#1e1e1e",
+    "editor.foreground": "#d4d4d4",
+    "activityBar.background": "#282c34",
+    "sideBar.background": "#1e1e1e",
+    "statusBar.background": "#007acc",
+    "statusBar.noFolderBackground": "#68217a",
+    "titleBar.activeBackground": "#007acc"
+  }
+}
+```
+
+### Customizing Theme-Specific Colors
+
+You can apply customizations to specific themes:
+
+```json settings.json
+{
+  "workbench.colorCustomizations": {
+    "[Monokai]": {
+      "editor.background": "#1e1e1e",
+      "statusBar.background": "#ff0000"
+    },
+    "[Abyss]": {
+      "editor.background": "#000000"
+    }
+  }
+}
+```
+
+### Customizing Syntax Highlighting
+
+```json settings.json
+{
+  "editor.tokenColorCustomizations": {
+    "textMateRules": [
+      {
+        "scope": "comment",
+        "settings": {
+          "foreground": "#5c6370",
+          "fontStyle": "italic"
+        }
+      },
+      {
+        "scope": "keyword",
+        "settings": {
+          "foreground": "#c678dd",
+          "fontStyle": "bold"
+        }
+      },
+      {
+        "scope": "string",
+        "settings": {
+          "foreground": "#98c379"
+        }
+      }
+    ]
+  }
+}
+```
+
+### Customizing Semantic Highlighting
+
+```json settings.json
+{
+  "editor.semanticTokenColorCustomizations": {
+    "enabled": true,
+    "rules": {
+      "*.deprecated": {
+        "strikethrough": true
+      },
+      "function": {
+        "foreground": "#61afef",
+        "fontStyle": "bold"
+      },
+      "variable.readonly": {
+        "foreground": "#e5c07b"
+      }
+    }
+  }
+}
+```
+
+## Creating Custom Themes
+
+To create a complete custom theme:
+
+<Steps>
+  <Step title="Generate Theme Extension">
+    Use the Yeoman generator:
+    
+    ```bash
+    npm install -g yo generator-code
+    yo code
+    ```
+    
+    Select "New Color Theme" and follow the prompts.
+  </Step>
+  
+  <Step title="Define Theme Structure">
+    Create a theme file in the `themes/` directory:
+    
+    ```json package.json
+    {
+      "contributes": {
+        "themes": [
+          {
+            "id": "my-custom-theme",
+            "label": "My Custom Theme",
+            "uiTheme": "vs-dark",
+            "path": "./themes/my-theme.json"
+          }
+        ]
+      }
+    }
+    ```
+  </Step>
+  
+  <Step title="Define Colors">
+    Create the theme JSON file with colors and token colors:
+    
+    ```json themes/my-theme.json
+    {
+      "name": "My Custom Theme",
+      "type": "dark",
+      "colors": {
+        "editor.background": "#1e1e1e",
+        "editor.foreground": "#d4d4d4"
+      },
+      "tokenColors": [
+        {
+          "scope": "comment",
+          "settings": {
+            "foreground": "#6A9955"
+          }
+        }
+      ]
+    }
+    ```
+  </Step>
+  
+  <Step title="Test and Publish">
+    Press `F5` to test your theme in a new VS Code window. When ready, publish to the Marketplace.
+  </Step>
+</Steps>
+
+## Icon Themes
+
+### File Icon Theme Structure
+
+Icon themes are defined in JSON and reference SVG or PNG files:
+
+```json vs-seti-icon-theme.json
+{
+  "iconDefinitions": {
+    "_file": {
+      "iconPath": "./icons/default_file.svg"
+    },
+    "_folder": {
+      "iconPath": "./icons/default_folder.svg"
+    },
+    "javascript": {
+      "iconPath": "./icons/javascript.svg"
+    }
+  },
+  "fileExtensions": {
+    "js": "javascript",
+    "jsx": "javascript"
+  },
+  "fileNames": {
+    "package.json": "npm"
+  },
+  "folderNames": {
+    "node_modules": "folder-node"
+  }
+}
+```
+
+### Built-in Icon Themes
+
+- **Seti (Visual Studio Code)** - Default icon theme
+- **Minimal (Visual Studio Code)** - Simple file type icons
+- **None** - No file icons
+
+<Note>
+File icon themes only affect the Explorer view and breadcrumbs. They don't change icons in other parts of VS Code.
+</Note>
+
+## Theme Extension Packaging
+
+To package and share your theme:
+
+```json package.json
+{
+  "name": "my-theme",
+  "displayName": "My Custom Theme",
+  "version": "1.0.0",
+  "publisher": "your-name",
+  "engines": {
+    "vscode": "*"
+  },
+  "categories": ["Themes"],
+  "contributes": {
+    "themes": [
+      {
+        "id": "my-custom-theme",
+        "label": "My Custom Theme",
+        "uiTheme": "vs-dark",
+        "path": "./themes/my-theme.json"
+      }
+    ]
+  }
+}
+```
+
+## Color Theme Settings
+
+### Automatic Theme Switching
+
+Switch themes based on time of day:
+
+```json settings.json
+{
+  "window.autoDetectColorScheme": true,
+  "workbench.preferredDarkColorTheme": "Monokai",
+  "workbench.preferredLightColorTheme": "Quiet Light",
+  "workbench.preferredHighContrastColorTheme": "High Contrast"
+}
+```
+
+<Warning>
+Color customizations in `workbench.colorCustomizations` apply globally to all themes unless scoped to a specific theme using the theme name in brackets.
+</Warning>
+
+## Finding Colors
+
+To discover available color keys:
+
+1. Open Command Palette
+2. Type "Developer: Inspect Editor Tokens and Scopes"
+3. Click on any token to see its color and scope information
+4. Use "Developer: Generate Color Theme From Current Settings" to export current customizations
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Settings" icon="gear" href="./settings">
+    Configure theme behavior
+  </Card>
+  <Card title="Keybindings" icon="keyboard" href="./keybindings">
+    Add shortcuts for theme switching
+  </Card>
+</CardGroup>

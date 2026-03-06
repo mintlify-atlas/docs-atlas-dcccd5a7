@@ -1,0 +1,327 @@
+---
+title: "Window API"
+description: "Interact with the VS Code window and UI elements"
+---
+
+## Overview
+
+The `vscode.window` namespace provides functions for interacting with the VS Code window, including showing messages, creating UI elements, accessing editors and terminals, and managing user input.
+
+## Active Editors
+
+### activeTextEditor
+
+The currently active text editor or `undefined`.
+
+```typescript
+const activeTextEditor: TextEditor | undefined
+```
+
+**Example:**
+
+```typescript
+import * as vscode from 'vscode';
+
+const editor = vscode.window.activeTextEditor;
+if (editor) {
+  const document = editor.document;
+  const selection = editor.selection;
+  const text = document.getText(selection);
+  console.log(`Selected text: ${text}`);
+}
+```
+
+### visibleTextEditors
+
+All currently visible text editors.
+
+```typescript
+const visibleTextEditors: readonly TextEditor[]
+```
+
+## Showing Messages
+
+### showInformationMessage
+
+Show an information message to users.
+
+```typescript
+function showInformationMessage(
+  message: string,
+  ...items: string[]
+): Thenable<string | undefined>
+```
+
+**Example:**
+
+```typescript
+const result = await vscode.window.showInformationMessage(
+  'Do you want to continue?',
+  'Yes',
+  'No'
+);
+
+if (result === 'Yes') {
+  // User clicked Yes
+}
+```
+
+### showWarningMessage
+
+Show a warning message.
+
+```typescript
+function showWarningMessage(
+  message: string,
+  ...items: string[]
+): Thenable<string | undefined>
+```
+
+**Example:**
+
+```typescript
+vscode.window.showWarningMessage(
+  'This action cannot be undone',
+  'Proceed',
+  'Cancel'
+);
+```
+
+### showErrorMessage
+
+Show an error message.
+
+```typescript
+function showErrorMessage(
+  message: string,
+  ...items: string[]
+): Thenable<string | undefined>
+```
+
+**Example:**
+
+```typescript
+try {
+  // Some operation
+} catch (error) {
+  vscode.window.showErrorMessage(
+    `Operation failed: ${error.message}`
+  );
+}
+```
+
+## User Input
+
+### showInputBox
+
+Show an input box to ask the user for input.
+
+```typescript
+function showInputBox(
+  options?: InputBoxOptions
+): Thenable<string | undefined>
+```
+
+**Example:**
+
+```typescript
+const name = await vscode.window.showInputBox({
+  prompt: 'Enter your name',
+  placeHolder: 'John Doe',
+  validateInput: (value) => {
+    return value.length === 0 ? 'Name cannot be empty' : null;
+  }
+});
+```
+
+### showQuickPick
+
+Show a selection list allowing the user to choose one or more items.
+
+```typescript
+function showQuickPick(
+  items: string[] | Thenable<string[]>,
+  options?: QuickPickOptions
+): Thenable<string | undefined>
+```
+
+**Example:**
+
+```typescript
+const frameworks = ['React', 'Vue', 'Angular', 'Svelte'];
+const selected = await vscode.window.showQuickPick(frameworks, {
+  placeHolder: 'Select a framework',
+  canPickMany: false
+});
+
+if (selected) {
+  console.log(`Selected: ${selected}`);
+}
+```
+
+## Terminal Management
+
+### createTerminal
+
+Create a new terminal instance.
+
+```typescript
+function createTerminal(
+  options?: TerminalOptions
+): Terminal
+```
+
+**Example:**
+
+```typescript
+const terminal = vscode.window.createTerminal({
+  name: 'My Extension',
+  cwd: '/path/to/directory'
+});
+
+terminal.show();
+terminal.sendText('npm install');
+```
+
+### activeTerminal
+
+The currently active terminal or `undefined`.
+
+```typescript
+const activeTerminal: Terminal | undefined
+```
+
+### terminals
+
+All opened terminals.
+
+```typescript
+const terminals: readonly Terminal[]
+```
+
+## Output Channels
+
+### createOutputChannel
+
+Create a new output channel for logging.
+
+```typescript
+function createOutputChannel(
+  name: string
+): OutputChannel
+```
+
+**Example:**
+
+```typescript
+const outputChannel = vscode.window.createOutputChannel('My Extension');
+outputChannel.appendLine('Extension activated');
+outputChannel.show();
+```
+
+## Progress Indication
+
+### withProgress
+
+Show progress in the UI while running a task.
+
+```typescript
+function withProgress<R>(
+  options: ProgressOptions,
+  task: (progress: Progress<{ message?: string; increment?: number }>) => Thenable<R>
+): Thenable<R>
+```
+
+**Example:**
+
+```typescript
+await vscode.window.withProgress(
+  {
+    location: vscode.ProgressLocation.Notification,
+    title: 'Loading data',
+    cancellable: true
+  },
+  async (progress, token) => {
+    progress.report({ increment: 0 });
+    
+    for (let i = 0; i < 100; i++) {
+      if (token.isCancellationRequested) {
+        return;
+      }
+      await delay(50);
+      progress.report({ increment: 1, message: `${i}% complete` });
+    }
+  }
+);
+```
+
+## Status Bar
+
+### createStatusBarItem
+
+Create a status bar item.
+
+```typescript
+function createStatusBarItem(
+  alignment?: StatusBarAlignment,
+  priority?: number
+): StatusBarItem
+```
+
+**Example:**
+
+```typescript
+const statusBarItem = vscode.window.createStatusBarItem(
+  vscode.StatusBarAlignment.Right,
+  100
+);
+
+statusBarItem.text = '$(check) Ready';
+statusBarItem.tooltip = 'Extension is ready';
+statusBarItem.show();
+```
+
+## Events
+
+### onDidChangeActiveTextEditor
+
+Fires when the active text editor changes.
+
+```typescript
+const onDidChangeActiveTextEditor: Event<TextEditor | undefined>
+```
+
+**Example:**
+
+```typescript
+vscode.window.onDidChangeActiveTextEditor(editor => {
+  if (editor) {
+    console.log(`Switched to: ${editor.document.fileName}`);
+  }
+});
+```
+
+### onDidChangeTextEditorSelection
+
+Fires when the selection in an editor changes.
+
+```typescript
+const onDidChangeTextEditorSelection: Event<TextEditorSelectionChangeEvent>
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Check for Active Editor" icon="check">
+    Always verify `activeTextEditor` is not undefined before using it
+  </Card>
+  <Card title="Dispose Resources" icon="trash">
+    Dispose terminals, output channels, and status bar items when no longer needed
+  </Card>
+  <Card title="Use Appropriate Messages" icon="message">
+    Use info, warning, or error messages based on the severity
+  </Card>
+  <Card title="Progress for Long Tasks" icon="spinner">
+    Show progress indication for operations that take more than a second
+  </Card>
+</CardGroup>

@@ -1,0 +1,231 @@
+---
+title: Code Editor
+description: Powerful code editing features with IntelliSense, multi-cursor support, and syntax highlighting
+---
+
+## Overview
+
+The Visual Studio Code editor is built on the Monaco Editor, providing a fast, feature-rich editing experience optimized for coding. It includes intelligent code completion, syntax highlighting, bracket matching, and extensive customization options.
+
+## Key Features
+
+### Multi-Cursor Editing
+
+Edit multiple locations in your code simultaneously for faster refactoring and editing.
+
+<Steps>
+  <Step title="Add Cursor Below">
+    Press `Ctrl+Alt+Down` (Windows/Linux) or `Cmd+Option+Down` (macOS) to add a cursor on the line below
+  </Step>
+  <Step title="Add Cursor Above">
+    Press `Ctrl+Alt+Up` (Windows/Linux) or `Cmd+Option+Up` (macOS) to add a cursor on the line above
+  </Step>
+  <Step title="Select All Occurrences">
+    Press `Ctrl+Shift+L` (Windows/Linux) or `Cmd+Shift+L` (macOS) to select all occurrences of the current selection
+  </Step>
+</Steps>
+
+### Code Folding
+
+Collapse and expand sections of code to focus on specific areas.
+
+```typescript
+// Fold regions are automatically detected based on indentation
+export class CompletionItem {
+  readonly editStart: IPosition;
+  readonly editInsertEnd: IPosition;
+  readonly editReplaceEnd: IPosition;
+  
+  // Fold this section with Ctrl+Shift+[ (Cmd+Option+[ on macOS)
+  constructor(
+    readonly position: IPosition,
+    readonly completion: languages.CompletionItem,
+    readonly container: languages.CompletionList,
+    readonly provider: languages.CompletionItemProvider
+  ) {
+    this.textLabel = typeof completion.label === 'string'
+      ? completion.label
+      : completion.label?.label;
+  }
+}
+```
+
+### Bracket Matching and Colorization
+
+Visually identify matching brackets with automatic highlighting and customizable bracket pair colorization.
+
+<Note>
+Bracket pair colorization can be enabled in settings with `"editor.bracketPairColorization.enabled": true`
+</Note>
+
+## Editor Commands
+
+### Text Manipulation
+
+The editor provides powerful text editing operations through the `IEditOperationBuilder` interface:
+
+```typescript
+export interface IEditOperationBuilder {
+  // Add a new edit operation (a replace operation)
+  addEditOperation(range: IRange, text: string | null, forceMoveMarkers?: boolean): void;
+  
+  // Add a tracked edit operation for undo/redo
+  addTrackedEditOperation(range: IRange, text: string | null, forceMoveMarkers?: boolean): void;
+  
+  // Track selection when applying edit operations
+  trackSelection(selection: Selection, trackPreviousOnEmpty?: boolean): string;
+}
+```
+
+### Common Keyboard Shortcuts
+
+| Action | Windows/Linux | macOS |
+|--------|---------------|-------|
+| Cut line | `Ctrl+X` | `Cmd+X` |
+| Copy line | `Ctrl+C` | `Cmd+C` |
+| Move line up/down | `Alt+Up/Down` | `Option+Up/Down` |
+| Duplicate line | `Shift+Alt+Down` | `Shift+Option+Down` |
+| Delete line | `Ctrl+Shift+K` | `Cmd+Shift+K` |
+| Comment line | `Ctrl+/` | `Cmd+/` |
+| Format document | `Shift+Alt+F` | `Shift+Option+F` |
+| Go to line | `Ctrl+G` | `Cmd+G` |
+| Find | `Ctrl+F` | `Cmd+F` |
+| Replace | `Ctrl+H` | `Cmd+Option+F` |
+
+## Configuration
+
+### Editor Settings
+
+Configure the editor behavior in your `settings.json`:
+
+```json
+{
+  "editor.fontSize": 14,
+  "editor.fontFamily": "'Fira Code', Consolas, 'Courier New', monospace",
+  "editor.fontLigatures": true,
+  "editor.lineHeight": 22,
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.wordWrap": "on",
+  "editor.minimap.enabled": true,
+  "editor.rulers": [80, 120],
+  "editor.renderWhitespace": "boundary",
+  "editor.cursorBlinking": "smooth",
+  "editor.cursorSmoothCaretAnimation": "on",
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true
+}
+```
+
+### Auto Save
+
+Control when files are automatically saved:
+
+<CodeGroup>
+```json Off
+{
+  "files.autoSave": "off"
+}
+```
+
+```json After Delay
+{
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000
+}
+```
+
+```json On Focus Change
+{
+  "files.autoSave": "onFocusChange"
+}
+```
+
+```json On Window Change
+{
+  "files.autoSave": "onWindowChange"
+}
+```
+</CodeGroup>
+
+## Language-Specific Settings
+
+Override editor settings per language:
+
+```json
+{
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2
+  },
+  "[python]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true
+  },
+  "[markdown]": {
+    "editor.wordWrap": "on",
+    "editor.quickSuggestions": false
+  }
+}
+```
+
+## Accessibility Features
+
+<Card title="Screen Reader Support" icon="accessibility">
+VS Code provides full screen reader support with optimized navigation and announcements. Enable with `Ctrl+E` (Windows/Linux) or `Cmd+E` (macOS).
+</Card>
+
+<Tip>
+Use `Alt+F1` to open the accessibility help dialog which shows all keyboard shortcuts for the current context.
+</Tip>
+
+## Advanced Features
+
+### Sticky Scroll
+
+Keep important context visible while scrolling through code:
+
+```json
+{
+  "editor.stickyScroll.enabled": true,
+  "editor.stickyScroll.maxLineCount": 5
+}
+```
+
+### Linked Editing
+
+Automatically update related symbols when editing:
+
+```json
+{
+  "editor.linkedEditing": true
+}
+```
+
+### Inlay Hints
+
+Display additional inline information about types and parameters:
+
+```json
+{
+  "editor.inlayHints.enabled": "on",
+  "typescript.inlayHints.parameterNames.enabled": "all",
+  "typescript.inlayHints.variableTypes.enabled": true
+}
+```
+
+## Performance
+
+For large files, VS Code automatically adjusts features to maintain performance:
+
+<Warning>
+Files over 50MB are opened in a special mode with limited features for optimal performance.
+</Warning>
+
+```json
+{
+  "editor.largeFileOptimizations": true,
+  "files.maxMemoryForLargeFilesMB": 4096
+}
+```

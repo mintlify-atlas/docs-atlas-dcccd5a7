@@ -1,0 +1,485 @@
+---
+title: 'Text Decorations'
+description: 'Style and annotate text in the editor with colors, borders, and custom content'
+---
+
+# Text Decorations
+
+Text decorations allow you to customize the appearance of text in the VS Code editor by applying colors, borders, backgrounds, and even injecting custom content before or after text ranges.
+
+## Overview
+
+Decorations are visual styling applied to text ranges without modifying the underlying document. They're perfect for syntax highlighting, error indicators, code coverage visualization, and inline annotations.
+
+### Common Use Cases
+
+- Syntax highlighting extensions
+- Error and warning indicators
+- Code coverage visualization
+- Git diff annotations
+- Search result highlighting
+- Inline hints and annotations
+
+## TextEditorDecorationType
+
+Decorations are created using `window.createTextEditorDecorationType()` which returns a `TextEditorDecorationType` handle.
+
+### Basic Usage
+
+```typescript
+import * as vscode from 'vscode';
+
+export function activate(context: vscode.ExtensionContext) {
+  // Create decoration type
+  const errorDecoration = vscode.window.createTextEditorDecorationType({
+    backgroundColor: 'rgba(255, 0, 0, 0.3)',
+    border: '1px solid red',
+    borderRadius: '3px',
+    cursor: 'pointer'
+  });
+
+  // Apply decoration
+  const editor = vscode.window.activeTextEditor;
+  if (editor) {
+    const range = new vscode.Range(
+      new vscode.Position(0, 0),
+      new vscode.Position(0, 10)
+    );
+    editor.setDecorations(errorDecoration, [range]);
+  }
+
+  // Clean up when done
+  context.subscriptions.push(errorDecoration);
+}
+```
+
+## Decoration Options
+
+### DecorationRenderOptions
+
+The main interface for configuring decoration appearance:
+
+```typescript
+interface DecorationRenderOptions extends ThemableDecorationRenderOptions {
+  // Whole line decoration
+  isWholeLine?: boolean;
+  
+  // Range behavior when editing
+  rangeBehavior?: DecorationRangeBehavior;
+  
+  // Overview ruler (scrollbar)
+  overviewRulerLane?: OverviewRulerLane;
+  
+  // Theme-specific overrides
+  light?: ThemableDecorationRenderOptions;
+  dark?: ThemableDecorationRenderOptions;
+}
+```
+
+### Styling Properties
+
+<Steps>
+  <Step title="Colors and Backgrounds">
+    Apply colors using CSS values or theme colors:
+
+    ```typescript
+    const decoration = vscode.window.createTextEditorDecorationType({
+      // Direct color values
+      backgroundColor: 'rgba(255, 255, 0, 0.3)',
+      color: '#FF0000',
+      
+      // Or use theme colors
+      backgroundColor: new vscode.ThemeColor('editor.wordHighlightBackground'),
+      color: new vscode.ThemeColor('errorForeground')
+    });
+    ```
+  </Step>
+
+  <Step title="Borders and Outlines">
+    Add borders and outlines around text:
+
+    ```typescript
+    const decoration = vscode.window.createTextEditorDecorationType({
+      border: '2px solid blue',
+      borderRadius: '3px',
+      borderSpacing: '2px',
+      
+      // Or use outline
+      outline: '1px dashed red',
+      outlineColor: 'orange',
+      outlineWidth: '2px'
+    });
+    ```
+  </Step>
+
+  <Step title="Text Styling">
+    Apply font and text decorations:
+
+    ```typescript
+    const decoration = vscode.window.createTextEditorDecorationType({
+      fontStyle: 'italic',
+      fontWeight: 'bold',
+      textDecoration: 'underline wavy red',
+      letterSpacing: '2px',
+      opacity: '0.7'
+    });
+    ```
+  </Step>
+</Steps>
+
+## Advanced Features
+
+### Gutter Icons
+
+Add icons in the editor gutter:
+
+```typescript
+const warningDecoration = vscode.window.createTextEditorDecorationType({
+  gutterIconPath: vscode.Uri.file('/path/to/warning.svg'),
+  gutterIconSize: 'contain',
+  
+  // Or use ThemeIcon
+  gutterIconPath: new vscode.ThemeIcon('warning', new vscode.ThemeColor('editorWarning.foreground'))
+});
+
+const editor = vscode.window.activeTextEditor;
+if (editor) {
+  const decorations = [
+    {
+      range: new vscode.Range(5, 0, 5, 0), // Line 5
+      hoverMessage: 'Warning: Deprecated API'
+    }
+  ];
+  editor.setDecorations(warningDecoration, decorations);
+}
+```
+
+### Overview Ruler
+
+Add indicators to the scrollbar overview ruler:
+
+```typescript
+const errorDecoration = vscode.window.createTextEditorDecorationType({
+  overviewRulerColor: 'red',
+  overviewRulerLane: vscode.OverviewRulerLane.Left,
+  
+  // Also style the text
+  backgroundColor: 'rgba(255, 0, 0, 0.2)',
+  border: '1px solid red'
+});
+```
+
+### Before and After Content
+
+Inject custom content before or after decorated text:
+
+```typescript
+const annotationDecoration = vscode.window.createTextEditorDecorationType({
+  before: {
+    contentText: '→ ',
+    color: 'gray',
+    fontWeight: 'bold',
+    margin: '0 5px 0 0'
+  },
+  after: {
+    contentText: ' ✓',
+    color: 'green',
+    margin: '0 0 0 10px'
+  }
+});
+
+const editor = vscode.window.activeTextEditor;
+if (editor) {
+  const decorations = [
+    {
+      range: new vscode.Range(0, 0, 0, 20),
+      renderOptions: {
+        after: {
+          contentText: ` // Added on ${new Date().toLocaleDateString()}`,
+          color: 'gray',
+          fontStyle: 'italic'
+        }
+      }
+    }
+  ];
+  editor.setDecorations(annotationDecoration, decorations);
+}
+```
+
+### Hover Messages
+
+Add hover tooltips to decorated ranges:
+
+```typescript
+const editor = vscode.window.activeTextEditor;
+if (editor) {
+  const decorations: vscode.DecorationOptions[] = [
+    {
+      range: new vscode.Range(0, 0, 0, 10),
+      hoverMessage: 'This is a simple string hover'
+    },
+    {
+      range: new vscode.Range(1, 0, 1, 15),
+      hoverMessage: new vscode.MarkdownString('**Bold** and *italic* text')
+    },
+    {
+      range: new vscode.Range(2, 0, 2, 20),
+      hoverMessage: [
+        'Multiple messages',
+        new vscode.MarkdownString('Can be combined')
+      ]
+    }
+  ];
+  
+  editor.setDecorations(myDecorationType, decorations);
+}
+```
+
+## Decoration Range Behavior
+
+Control how decorations behave when text is edited at their boundaries:
+
+```typescript
+enum DecorationRangeBehavior {
+  // Widen when editing at start or end
+  OpenOpen = 0,
+  
+  // Don't widen when editing at start or end
+  ClosedClosed = 1,
+  
+  // Widen when editing at start, not at end
+  OpenClosed = 2,
+  
+  // Widen when editing at end, not at start
+  ClosedOpen = 3
+}
+
+const decoration = vscode.window.createTextEditorDecorationType({
+  backgroundColor: 'yellow',
+  rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
+});
+```
+
+## Theme-Specific Decorations
+
+Provide different styles for light and dark themes:
+
+```typescript
+const decoration = vscode.window.createTextEditorDecorationType({
+  // Default style
+  backgroundColor: 'rgba(0, 0, 0, 0.1)',
+  
+  // Light theme override
+  light: {
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    color: '#000000',
+    border: '1px solid #CCCCCC'
+  },
+  
+  // Dark theme override
+  dark: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    color: '#FFFFFF',
+    border: '1px solid #444444'
+  }
+});
+```
+
+## Complete Example: Code Coverage
+
+Here's a complete example showing covered and uncovered code:
+
+```typescript
+import * as vscode from 'vscode';
+
+export function activate(context: vscode.ExtensionContext) {
+  // Create decoration types
+  const coveredDecoration = vscode.window.createTextEditorDecorationType({
+    backgroundColor: 'rgba(0, 255, 0, 0.2)',
+    isWholeLine: true,
+    overviewRulerColor: 'green',
+    overviewRulerLane: vscode.OverviewRulerLane.Left,
+    after: {
+      contentText: ' ✓',
+      color: 'green'
+    }
+  });
+
+  const uncoveredDecoration = vscode.window.createTextEditorDecorationType({
+    backgroundColor: 'rgba(255, 0, 0, 0.2)',
+    isWholeLine: true,
+    overviewRulerColor: 'red',
+    overviewRulerLane: vscode.OverviewRulerLane.Left,
+    after: {
+      contentText: ' ✗ Not covered',
+      color: 'red',
+      fontStyle: 'italic'
+    }
+  });
+
+  // Apply decorations
+  function updateDecorations(editor: vscode.TextEditor) {
+    const coverage = getCoverageData(editor.document.uri);
+    
+    const coveredRanges: vscode.DecorationOptions[] = [];
+    const uncoveredRanges: vscode.DecorationOptions[] = [];
+    
+    coverage.forEach(line => {
+      const range = editor.document.lineAt(line.number).range;
+      const decoration = {
+        range,
+        hoverMessage: `Covered ${line.count} times`
+      };
+      
+      if (line.covered) {
+        coveredRanges.push(decoration);
+      } else {
+        uncoveredRanges.push(decoration);
+      }
+    });
+    
+    editor.setDecorations(coveredDecoration, coveredRanges);
+    editor.setDecorations(uncoveredDecoration, uncoveredRanges);
+  }
+
+  // Update on editor change
+  vscode.window.onDidChangeActiveTextEditor(editor => {
+    if (editor) {
+      updateDecorations(editor);
+    }
+  }, null, context.subscriptions);
+
+  // Update on document change
+  vscode.workspace.onDidChangeTextDocument(event => {
+    const editor = vscode.window.activeTextEditor;
+    if (editor && event.document === editor.document) {
+      updateDecorations(editor);
+    }
+  }, null, context.subscriptions);
+
+  // Initial decoration
+  if (vscode.window.activeTextEditor) {
+    updateDecorations(vscode.window.activeTextEditor);
+  }
+
+  context.subscriptions.push(coveredDecoration, uncoveredDecoration);
+}
+
+function getCoverageData(uri: vscode.Uri): Array<{number: number, covered: boolean, count: number}> {
+  // Mock data - replace with actual coverage data
+  return [
+    { number: 0, covered: true, count: 5 },
+    { number: 1, covered: true, count: 5 },
+    { number: 2, covered: false, count: 0 },
+    { number: 5, covered: true, count: 3 }
+  ];
+}
+```
+
+## Best Practices
+
+### Performance
+
+<Warning>
+Decorations are recalculated on every edit. Keep decoration logic fast:
+</Warning>
+
+```typescript
+// ❌ Bad: Creating new decoration type on every update
+function updateDecorations(editor: vscode.TextEditor) {
+  const decoration = vscode.window.createTextEditorDecorationType({ ... });
+  editor.setDecorations(decoration, ranges);
+}
+
+// ✅ Good: Reuse decoration type
+const decoration = vscode.window.createTextEditorDecorationType({ ... });
+
+function updateDecorations(editor: vscode.TextEditor) {
+  editor.setDecorations(decoration, ranges);
+}
+```
+
+### Batch Updates
+
+```typescript
+// ✅ Good: Update all decorations at once
+function updateAllDecorations(editor: vscode.TextEditor) {
+  const errors: vscode.Range[] = [];
+  const warnings: vscode.Range[] = [];
+  
+  // Collect all ranges
+  diagnostics.forEach(diag => {
+    if (diag.severity === vscode.DiagnosticSeverity.Error) {
+      errors.push(diag.range);
+    } else {
+      warnings.push(diag.range);
+    }
+  });
+  
+  // Apply all at once
+  editor.setDecorations(errorDecoration, errors);
+  editor.setDecorations(warningDecoration, warnings);
+}
+```
+
+### Cleanup
+
+```typescript
+// Always dispose decoration types
+const decoration = vscode.window.createTextEditorDecorationType({ ... });
+context.subscriptions.push(decoration);
+
+// Or manually
+deactivate() {
+  decoration.dispose();
+}
+```
+
+## Common Patterns
+
+### Debounced Updates
+
+```typescript
+let timeout: NodeJS.Timeout | undefined;
+
+vscode.workspace.onDidChangeTextDocument(event => {
+  const editor = vscode.window.activeTextEditor;
+  if (editor && event.document === editor.document) {
+    // Clear previous timeout
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+    
+    // Debounce updates
+    timeout = setTimeout(() => {
+      updateDecorations(editor);
+    }, 500);
+  }
+});
+```
+
+### Line-based Decorations
+
+```typescript
+function decorateLines(editor: vscode.TextEditor, lineNumbers: number[]) {
+  const ranges = lineNumbers.map(lineNum => {
+    return {
+      range: editor.document.lineAt(lineNum).range,
+      hoverMessage: `Line ${lineNum + 1}`
+    };
+  });
+  
+  editor.setDecorations(lineDecoration, ranges);
+}
+```
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card title="Decorator Sample" icon="palette" href="https://github.com/microsoft/vscode-extension-samples/tree/main/decorator-sample">
+    Complete working example
+  </Card>
+  <Card title="Theme Colors" icon="paintbrush" href="https://code.visualstudio.com/api/references/theme-color">
+    Available theme color IDs
+  </Card>
+</CardGroup>

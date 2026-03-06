@@ -1,0 +1,535 @@
+---
+title: 'Webviews'
+description: 'Create custom, interactive UI within VS Code using HTML, CSS, and JavaScript'
+---
+
+# Webviews
+
+Webviews allow you to create fully customizable views within VS Code using HTML, CSS, and JavaScript. They're perfect for building custom editors, visualizations, and interactive documentation.
+
+## Overview
+
+Webviews display HTML content in an isolated iframe-like environment. They can communicate bidirectionally with your extension through message passing.
+
+### When to Use Webviews
+
+- Custom editors for specialized file types
+- Data visualizations and charts
+- Interactive tutorials or documentation
+- Configuration UIs
+- Preview panels for markup languages
+
+<Warning>
+Webviews have high memory overhead. Use them sparingly and prefer TreeViews or QuickPick for simpler UIs.
+</Warning>
+
+## Webview Panels
+
+Webview panels are standalone webviews that appear in the editor area, like tabs.
+
+### Creating a Webview Panel
+
+<Steps>
+  <Step title="Create the panel">
+    Use `window.createWebviewPanel` to create a webview panel:
+
+    ```typescript
+    import * as vscode from 'vscode';
+
+    export function activate(context: vscode.ExtensionContext) {
+      const disposable = vscode.commands.registerCommand('myExtension.openWebview', () => {
+        // Create and show panel
+        const panel = vscode.window.createWebviewPanel(
+          'myWebview', // Identifies the type of webview
+          'My Webview', // Title displayed in tab
+          vscode.ViewColumn.One, // Editor column to show the panel in
+          {
+            // Enable scripts in the webview
+            enableScripts: true,
+            // Restrict loading resources to specific folders
+            localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'media')]
+          }
+        );
+
+        // Set HTML content
+        panel.webview.html = getWebviewContent();
+      });
+
+      context.subscriptions.push(disposable);
+    }
+
+    function getWebviewContent(): string {
+      return `<!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>My Webview</title>
+      </head>
+      <body>
+        <h1>Hello from Webview!</h1>
+        <button onclick="sendMessage()">Send Message</button>
+        
+        <script>
+          const vscode = acquireVsCodeApi();
+          
+          function sendMessage() {
+            vscode.postMessage({ command: 'hello', text: 'Hello from webview!' });
+          }
+        </script>
+      </body>
+      </html>`;
+    }
+    ```
+  </Step>
+
+  <Step title="Handle messages from webview">
+    Listen for messages sent from the webview:
+
+    ```typescript
+    panel.webview.onDidReceiveMessage(
+      message => {
+        switch (message.command) {
+          case 'hello':
+            vscode.window.showInformationMessage(message.text);
+            return;
+          case 'error':
+            vscode.window.showErrorMessage(message.text);
+            return;
+        }
+      },
+      undefined,
+      context.subscriptions
+    );
+    ```
+  </Step>
+
+  <Step title="Send messages to webview">
+    Post messages from your extension to the webview:
+
+    ```typescript
+    // Send message to webview
+    panel.webview.postMessage({ command: 'update', data: { count: 5 } });
+
+    // In webview JavaScript:
+    // window.addEventListener('message', event => {
+    //   const message = event.data;
+    //   if (message.command === 'update') {
+    //     document.getElementById('count').textContent = message.data.count;
+    //   }
+    // });
+    ```
+  </Step>
+</Steps>
+
+## Loading Local Resources
+
+Webviews cannot directly access local files. You must convert file URIs using `asWebviewUri()`.
+
+### Resource Loading Example
+
+```typescript
+function getWebviewContent(
+  webview: vscode.Webview,
+  extensionUri: vscode.Uri
+): string {
+  // Get paths to resources
+  const styleUri = webview.asWebviewUri(
+    vscode.Uri.joinPath(extensionUri, 'media', 'styles.css')
+  );
+  const scriptUri = webview.asWebviewUri(
+    vscode.Uri.joinPath(extensionUri, 'media', 'main.js')
+  );
+  const imageUri = webview.asWebviewUri(
+    vscode.Uri.joinPath(extensionUri, 'media', 'logo.png')
+  );
+
+  // Use nonce for Content Security Policy
+  const nonce = getNonce();
+
+  return `<!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" 
+          content="default-src 'none'; 
+                   style-src ${webview.cspSource}; 
+                   img-src ${webview.cspSource} https:; 
+                   script-src 'nonce-${nonce}';">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="${styleUri}" rel="stylesheet">
+    <title>My Webview</title>
+  </head>
+  <body>
+    <img src="${imageUri}" alt="Logo">
+    <h1>Hello World</h1>
+    <script nonce="${nonce}" src="${scriptUri}"></script>
+  </body>
+  </html>`;
+}
+
+function getNonce(): string {
+  let text = '';
+  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  for (let i = 0; i < 32; i++) {
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+  return text;
+}
+```
+
+<Note>
+Always use a Content Security Policy (CSP) to restrict what content can be loaded in your webview.
+</Note>
+
+## State Persistence
+
+Webviews can persist state across panel closures and VS Code restarts.
+
+### Webview State Management
+
+<CodeGroup>
+```typescript Extension Side
+class MyWebviewPanel {
+  public static currentPanel: MyWebviewPanel | undefined;
+  private readonly _panel: vscode.WebviewPanel;
+  private _disposables: vscode.Disposable[] = [];
+
+  private constructor(
+    panel: vscode.WebviewPanel,
+    extensionUri: vscode.Uri
+  ) {
+    this._panel = panel;
+
+    // Set initial HTML
+    this._update();
+
+    // Listen for when the panel is disposed
+    this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
+
+    // Handle messages from webview
+    this._panel.webview.onDidReceiveMessage(
+      message => {
+        switch (message.command) {
+          case 'saveState':
+            // Persist state
+            break;
+        }
+      },
+      null,
+      this._disposables
+    );
+  }
+
+  public static createOrShow(extensionUri: vscode.Uri) {
+    const column = vscode.window.activeTextEditor
+      ? vscode.window.activeTextEditor.viewColumn
+      : undefined;
+
+    // If we already have a panel, show it
+    if (MyWebviewPanel.currentPanel) {
+      MyWebviewPanel.currentPanel._panel.reveal(column);
+      return;
+    }
+
+    // Create new panel
+    const panel = vscode.window.createWebviewPanel(
+      'myWebview',
+      'My Webview',
+      column || vscode.ViewColumn.One,
+      {
+        enableScripts: true,
+        localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'media')],
+        // Keep context when hidden
+        retainContextWhenHidden: true
+      }
+    );
+
+    MyWebviewPanel.currentPanel = new MyWebviewPanel(panel, extensionUri);
+  }
+
+  private _update() {
+    this._panel.webview.html = this._getHtmlForWebview(this._panel.webview);
+  }
+
+  public dispose() {
+    MyWebviewPanel.currentPanel = undefined;
+    this._panel.dispose();
+    while (this._disposables.length) {
+      const disposable = this._disposables.pop();
+      if (disposable) {
+        disposable.dispose();
+      }
+    }
+  }
+
+  private _getHtmlForWebview(webview: vscode.Webview): string {
+    return `<!DOCTYPE html>
+    <html>
+    <body>
+      <h1>Persistent Webview</h1>
+      <script>
+        const vscode = acquireVsCodeApi();
+        
+        // Get previous state
+        const previousState = vscode.getState();
+        let count = previousState ? previousState.count : 0;
+        
+        // Update state
+        function increment() {
+          count++;
+          vscode.setState({ count: count });
+          document.getElementById('counter').textContent = count;
+        }
+        
+        // Restore state
+        document.getElementById('counter').textContent = count;
+      </script>
+      <button onclick="increment()">Count: <span id="counter">0</span></button>
+    </body>
+    </html>`;
+  }
+}
+```
+
+```javascript Webview Side
+// In your webview JavaScript
+const vscode = acquireVsCodeApi();
+
+// Get previous state
+const previousState = vscode.getState();
+if (previousState) {
+  // Restore UI from state
+  restoreUIState(previousState);
+}
+
+// Save state when it changes
+function updateState(newData) {
+  const state = {
+    data: newData,
+    timestamp: Date.now()
+  };
+  
+  // Persist state
+  vscode.setState(state);
+}
+
+// State persists across:
+// - Panel being hidden/shown
+// - VS Code restart (with serializer)
+```
+</CodeGroup>
+
+## Webview Serialization
+
+To restore webviews across VS Code restarts, register a serializer.
+
+```typescript
+export function activate(context: vscode.ExtensionContext) {
+  // Register serializer
+  vscode.window.registerWebviewPanelSerializer('myWebview', {
+    async deserializeWebviewPanel(
+      webviewPanel: vscode.WebviewPanel,
+      state: any
+    ) {
+      // Restore the panel
+      webviewPanel.webview.options = {
+        enableScripts: true
+      };
+      webviewPanel.webview.html = getWebviewContent(webviewPanel.webview, context.extensionUri);
+      
+      // Restore state if needed
+      if (state) {
+        webviewPanel.webview.postMessage({ command: 'restoreState', state });
+      }
+    }
+  });
+}
+```
+
+## Webview Views
+
+Webview views are webviews that appear in the sidebar, panel, or other view containers.
+
+### Creating a Webview View
+
+<Steps>
+  <Step title="Register in package.json">
+    Define your view in `package.json`:
+
+    ```json
+    {
+      "contributes": {
+        "views": {
+          "explorer": [
+            {
+              "type": "webview",
+              "id": "myExtension.myView",
+              "name": "My View"
+            }
+          ]
+        }
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Implement the provider">
+    Create a `WebviewViewProvider`:
+
+    ```typescript
+    class MyWebviewViewProvider implements vscode.WebviewViewProvider {
+      constructor(private readonly _extensionUri: vscode.Uri) {}
+
+      resolveWebviewView(
+        webviewView: vscode.WebviewView,
+        context: vscode.WebviewViewResolveContext,
+        token: vscode.CancellationToken
+      ) {
+        webviewView.webview.options = {
+          enableScripts: true,
+          localResourceRoots: [this._extensionUri]
+        };
+
+        webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
+
+        // Handle messages
+        webviewView.webview.onDidReceiveMessage(data => {
+          switch (data.type) {
+            case 'action':
+              vscode.window.showInformationMessage(data.value);
+              break;
+          }
+        });
+      }
+
+      private _getHtmlForWebview(webview: vscode.Webview): string {
+        return `<!DOCTYPE html>
+        <html>
+        <body>
+          <h2>Sidebar Webview</h2>
+          <button onclick="sendAction()">Click Me</button>
+          <script>
+            const vscode = acquireVsCodeApi();
+            function sendAction() {
+              vscode.postMessage({ type: 'action', value: 'Button clicked!' });
+            }
+          </script>
+        </body>
+        </html>`;
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Register the provider">
+    Register your provider in the extension's `activate` function:
+
+    ```typescript
+    export function activate(context: vscode.ExtensionContext) {
+      const provider = new MyWebviewViewProvider(context.extensionUri);
+      
+      context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider('myExtension.myView', provider)
+      );
+    }
+    ```
+  </Step>
+</Steps>
+
+## Best Practices
+
+### Security
+
+<Warning>
+Always implement a strict Content Security Policy to prevent XSS attacks:
+</Warning>
+
+```html
+<meta http-equiv="Content-Security-Policy" 
+      content="default-src 'none'; 
+               style-src ${webview.cspSource} 'unsafe-inline'; 
+               img-src ${webview.cspSource} https:; 
+               script-src 'nonce-${nonce}'; 
+               font-src ${webview.cspSource};">
+```
+
+### Performance
+
+```typescript
+// ❌ Bad: Creates new panel every time
+vscode.commands.registerCommand('open', () => {
+  vscode.window.createWebviewPanel(...);
+});
+
+// ✅ Good: Reuse existing panel
+let currentPanel: vscode.WebviewPanel | undefined;
+vscode.commands.registerCommand('open', () => {
+  if (currentPanel) {
+    currentPanel.reveal();
+  } else {
+    currentPanel = vscode.window.createWebviewPanel(...);
+    currentPanel.onDidDispose(() => { currentPanel = undefined; });
+  }
+});
+```
+
+### Message Typing
+
+```typescript
+// Define message types
+type Message = 
+  | { command: 'update'; data: any }
+  | { command: 'error'; error: string };
+
+panel.webview.onDidReceiveMessage((message: Message) => {
+  switch (message.command) {
+    case 'update':
+      handleUpdate(message.data);
+      break;
+    case 'error':
+      handleError(message.error);
+      break;
+  }
+});
+```
+
+## Common Patterns
+
+### Using Modern Frameworks
+
+You can use React, Vue, or other frameworks in webviews:
+
+```typescript
+function getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri): string {
+  const scriptUri = webview.asWebviewUri(
+    vscode.Uri.joinPath(extensionUri, 'dist', 'webview.js')
+  );
+
+  return `<!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script src="${scriptUri}"></script>
+  </body>
+  </html>`;
+}
+```
+
+<Note>
+Build your frontend code separately and load the bundled output in the webview.
+</Note>
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card title="Webview API" icon="window" href="https://code.visualstudio.com/api/extension-guides/webview">
+    Complete webview guide
+  </Card>
+  <Card title="Webview Sample" icon="code" href="https://github.com/microsoft/vscode-extension-samples/tree/main/webview-sample">
+    Sample extension code
+  </Card>
+</CardGroup>

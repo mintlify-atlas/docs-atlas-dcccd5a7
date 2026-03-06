@@ -1,0 +1,579 @@
+---
+title: Markdown
+description: Full-featured Markdown editing with preview, validation, and IntelliSense in Visual Studio Code
+---
+
+Visual Studio Code includes comprehensive Markdown support through the `markdown-language-features` extension. This built-in extension provides preview, validation, IntelliSense, and integrated editing features for Markdown documents.
+
+## Extension Overview
+
+The Markdown support consists of two core extensions:
+
+<Card title="markdown-basics" icon="file-text">
+  Provides syntax highlighting and basic language configuration for Markdown files
+</Card>
+
+<Card title="markdown-language-features" icon="sparkles">
+  Powers preview, validation, IntelliSense, and advanced editing features
+</Card>
+
+<Note>
+  Both extensions are bundled with VS Code and can be disabled but not uninstalled.
+</Note>
+
+## Supported File Types
+
+The extension recognizes Markdown files with various extensions:
+
+- `.md` - Standard Markdown
+- `.markdown` - Alternative Markdown extension
+- `.mdown`, `.mkd`, `.mdwn` - Other Markdown variants
+- `.mdtxt`, `.mdtext` - Text-based Markdown
+- `.workbook` - VS Code notebook format
+
+Additionally supports related formats:
+- `prompt` - AI prompt files
+- `instructions` - Instruction files
+- `chatagent` - Chat agent definitions
+- `skill` - Skill definition files
+
+## Markdown Preview
+
+The extension provides a rich preview experience:
+
+### Opening Preview
+
+<Steps>
+  <Step title="Open Preview to the Side">
+    Press `Ctrl+K V` (Windows/Linux) or `Cmd+K V` (Mac) to open preview beside editor
+  </Step>
+  
+  <Step title="Open Preview in Current Editor">
+    Press `Ctrl+Shift+V` (Windows/Linux) or `Cmd+Shift+V` (Mac)
+  </Step>
+  
+  <Step title="From Command Palette">
+    Search for "Markdown: Open Preview" or "Markdown: Open Preview to the Side"
+  </Step>
+</Steps>
+
+### Preview Commands
+
+```json
+{
+  "commands": [
+    "markdown.showPreview",
+    "markdown.showPreviewToSide",
+    "markdown.showLockedPreviewToSide",
+    "markdown.showSource",
+    "markdown.preview.refresh",
+    "markdown.preview.toggleLock"
+  ]
+}
+```
+
+### Locked Preview
+
+Create a preview that doesn't change when switching editors:
+
+- Command: **Markdown: Open Locked Preview to the Side**
+- The preview stays locked to a specific Markdown file
+- Toggle lock state with **Markdown: Toggle Preview Locking**
+
+## IntelliSense Features
+
+### Path Completions
+
+Automatic suggestions for links and images:
+
+```markdown
+<!-- Type [text]( to get path suggestions -->
+[Link to file](./other-file.md)
+
+<!-- Type ![alt]( for image paths -->
+![Image](./images/screenshot.png)
+```
+
+Configuration:
+
+```json
+{
+  "markdown.suggest.paths.enabled": true,
+  "markdown.suggest.paths.includeWorkspaceHeaderCompletions": "onDoubleHash"
+}
+```
+
+### Header Completions
+
+Link to headers in current and other files:
+
+```markdown
+<!-- Link to header in current file -->
+[Go to section](#installation)
+
+<!-- Link to header in another file -->
+[See other doc](./other.md#configuration)
+
+<!-- Workspace-wide header search with ## -->
+[Reference](##some-header-anywhere)
+```
+
+### Link Validation
+
+Real-time validation of links:
+
+```json
+{
+  "markdown.validate.enabled": true,
+  "markdown.validate.referenceLinks.enabled": "warning",
+  "markdown.validate.fragmentLinks.enabled": "warning",
+  "markdown.validate.fileLinks.enabled": "warning",
+  "markdown.validate.unusedLinkDefinitions.enabled": "hint"
+}
+```
+
+<Warning>
+  Link validation is disabled by default. Enable it for better error detection in documentation.
+</Warning>
+
+## Editor Features
+
+### Drag and Drop
+
+Drag files into the editor to insert links or images:
+
+```json
+{
+  "markdown.editor.drop.enabled": "smart",
+  "markdown.editor.drop.copyIntoWorkspace": "mediaFiles"
+}
+```
+
+Behavior:
+- **always**: Always insert Markdown link
+- **smart**: Insert link for Markdown files, embed for images
+- **never**: Disable drop functionality
+
+### Paste Files
+
+Paste images directly from clipboard:
+
+```json
+{
+  "markdown.editor.filePaste.enabled": "smart",
+  "markdown.editor.filePaste.copyIntoWorkspace": "mediaFiles"
+}
+```
+
+Customize media snippets:
+
+```json
+{
+  "markdown.editor.filePaste.videoSnippet": "<video controls src=\"${src}\" title=\"${title}\"></video>",
+  "markdown.editor.filePaste.audioSnippet": "<audio controls src=\"${src}\" title=\"${title}\"></audio>"
+}
+```
+
+### Paste URLs as Links
+
+Automatically format URLs when pasting:
+
+```json
+{
+  "markdown.editor.pasteUrlAsFormattedLink.enabled": "smartWithSelection"
+}
+```
+
+Modes:
+- **always**: Always format as `[text](url)`
+- **smart**: Format if URL-like string detected
+- **smartWithSelection**: Format only when text is selected
+- **never**: Paste URLs as-is
+
+### File Organization
+
+Configure where copied files are stored:
+
+```json
+{
+  "markdown.copyFiles.destination": {
+    "**/*": "./images/${fileName}"
+  },
+  "markdown.copyFiles.overwriteBehavior": "nameIncrementally"
+}
+```
+
+## Preview Customization
+
+### Custom Styles
+
+Add custom CSS to the preview:
+
+```json
+{
+  "markdown.styles": [
+    "./styles/markdown.css",
+    "./styles/custom-preview.css"
+  ]
+}
+```
+
+Example custom stylesheet:
+
+```css
+/* markdown.css */
+body {
+  font-family: 'Segoe UI', sans-serif;
+  line-height: 1.6;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+code {
+  background-color: #f4f4f4;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+pre {
+  background-color: #f6f8fa;
+  padding: 1rem;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+```
+
+### Typography Options
+
+```json
+{
+  "markdown.preview.breaks": false,
+  "markdown.preview.linkify": true,
+  "markdown.preview.typographer": false,
+  "markdown.preview.fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  "markdown.preview.fontSize": 14,
+  "markdown.preview.lineHeight": 1.6
+}
+```
+
+<Tip>
+  Enable `markdown.preview.typographer` for smart quotes and other typographic replacements.
+</Tip>
+
+### Scroll Synchronization
+
+```json
+{
+  "markdown.preview.scrollPreviewWithEditor": true,
+  "markdown.preview.scrollEditorWithPreview": true,
+  "markdown.preview.markEditorSelection": true,
+  "markdown.preview.doubleClickToSwitchToEditor": true
+}
+```
+
+## Notebook Rendering
+
+The extension includes a notebook renderer for multiple formats:
+
+```json
+{
+  "notebookRenderer": [
+    {
+      "id": "vscode.markdown-it-renderer",
+      "displayName": "Markdown it renderer",
+      "mimeTypes": [
+        "text/markdown",
+        "text/x-python",
+        "text/x-typescript",
+        "application/json"
+      ]
+    }
+  ]
+}
+```
+
+Renders code blocks in notebooks with full syntax highlighting.
+
+## Link Management
+
+### Find All References
+
+Find all files linking to the current document:
+
+- Command: **Markdown: Find All File References**
+- Shows all Markdown files that link to the current file
+- Updates as you type
+
+### Update Links on File Move
+
+Automatically update links when moving files:
+
+```json
+{
+  "markdown.updateLinksOnFileMove.enabled": "prompt",
+  "markdown.updateLinksOnFileMove.enableForDirectories": true,
+  "markdown.updateLinksOnFileMove.include": [
+    "**/*.{md,mkd,mdwn,mdown,markdown}",
+    "**/*.{jpg,png,gif,webp}"
+  ]
+}
+```
+
+Options:
+- **prompt**: Ask before updating links
+- **always**: Automatically update all links
+- **never**: Never update links
+
+### Link Path Preferences
+
+```json
+{
+  "markdown.preferredMdPathExtensionStyle": "auto"
+}
+```
+
+Modes:
+- **auto**: Use workspace convention
+- **includeExtension**: `[link](./doc.md)`
+- **removeExtension**: `[link](./doc)`
+
+## Validation and Diagnostics
+
+Configure validation severity:
+
+```json
+{
+  "markdown.validate.enabled": true,
+  "markdown.validate.referenceLinks.enabled": "warning",
+  "markdown.validate.fragmentLinks.enabled": "warning",
+  "markdown.validate.fileLinks.enabled": "warning",
+  "markdown.validate.fileLinks.markdownFragmentLinks": "inherit",
+  "markdown.validate.ignoredLinks": [
+    "./internal/*",
+    "http://example.com/*"
+  ],
+  "markdown.validate.unusedLinkDefinitions.enabled": "hint",
+  "markdown.validate.duplicateLinkDefinitions.enabled": "warning"
+}
+```
+
+## Math Support
+
+The extension supports KaTeX for rendering math:
+
+```markdown
+Inline math: $E = mc^2$
+
+Block math:
+$$
+\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}
+$$
+```
+
+Dependency:
+
+```json
+{
+  "devDependencies": {
+    "@vscode/markdown-it-katex": "^1.1.1"
+  }
+}
+```
+
+## Workspace Commands
+
+### Insert Link from Workspace
+
+- Command: **Markdown: Insert Link from Workspace**
+- Opens file picker to select file to link
+- Automatically generates relative path
+
+### Insert Image from Workspace
+
+- Command: **Markdown: Insert Image from Workspace**
+- Select image file to embed
+- Copies image to configured destination if needed
+
+## Language Server Integration
+
+The extension uses a language server for advanced features:
+
+```json
+{
+  "markdown.server.log": "off",
+  "markdown.trace.server": "off"
+}
+```
+
+For debugging:
+
+```json
+{
+  "markdown.server.log": "trace",
+  "markdown.trace.server": "verbose"
+}
+```
+
+## Syntax Highlighting in Code Blocks
+
+Supports syntax highlighting for many languages in fenced code blocks:
+
+````markdown
+```typescript
+interface User {
+  name: string;
+  age: number;
+}
+```
+
+```python
+def greet(name: str) -> str:
+    return f"Hello, {name}!"
+```
+
+```bash
+npm install --save-dev typescript
+```
+````
+
+## Preview Security
+
+Configure preview security for untrusted workspaces:
+
+- Command: **Markdown: Change Preview Security Settings**
+- Levels: Strict, Allow insecure content, Disable
+
+```json
+{
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "restrictedConfigurations": [
+        "markdown.styles"
+      ]
+    }
+  }
+}
+```
+
+## Markdown Math Extension
+
+Separate `markdown-math` extension adds enhanced math rendering:
+
+```json
+{
+  "dependencies": {
+    "markdown-it": "^12.3.2",
+    "markdown-it-front-matter": "^0.2.4"
+  }
+}
+```
+
+## Performance Considerations
+
+For large Markdown files:
+
+```json
+{
+  "markdown.occurrencesHighlight.enabled": false,
+  "editor.wordWrap": "on",
+  "editor.quickSuggestions": {
+    "comments": "off",
+    "strings": "off",
+    "other": "off"
+  }
+}
+```
+
+<Note>
+  These are the default settings applied to Markdown files for better editing experience.
+</Note>
+
+## Recommended Extensions
+
+Enhance your Markdown editing:
+
+<Card title="Markdown All in One" icon="star">
+  Keyboard shortcuts, table of contents, auto preview, and more
+</Card>
+
+<Card title="markdownlint" icon="check">
+  Markdown linting and style checking
+</Card>
+
+<Card title="Markdown Preview Enhanced" icon="eye">
+  Advanced preview with extended syntax support
+</Card>
+
+<Card title="Paste Image" icon="image">
+  Quickly paste images from clipboard
+</Card>
+
+## Common Use Cases
+
+### Documentation Websites
+
+```markdown
+---
+title: Getting Started
+description: Quick start guide
+---
+
+# Getting Started
+
+Welcome to our documentation!
+
+## Installation
+
+[See installation guide](./installation.md#setup)
+
+## Next Steps
+
+- [Configuration](./config.md)
+- [API Reference](./api/README.md)
+```
+
+### README Files
+
+```markdown
+# Project Name
+
+[![Build Status](https://img.shields.io/badge/build-passing-green)]
+
+## Quick Start
+
+```bash
+npm install my-package
+```
+
+## Features
+
+- [x] Feature 1
+- [x] Feature 2
+- [ ] Feature 3 (coming soon)
+```
+
+### Note Taking
+
+```markdown
+# Meeting Notes - 2026-03-06
+
+## Attendees
+- @alice
+- @bob
+
+## Discussion Points
+
+1. Project timeline
+2. Resource allocation
+
+## Action Items
+
+- [ ] @alice: Update timeline
+- [ ] @bob: Review budget
+```
+
+<Tip>
+  Use the built-in task list syntax (`- [ ]` and `- [x]`) to create interactive checkboxes in preview mode.
+</Tip>

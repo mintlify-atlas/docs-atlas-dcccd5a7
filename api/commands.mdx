@@ -1,0 +1,186 @@
+---
+title: "Commands API"
+description: "Register and execute commands in VS Code"
+---
+
+## Overview
+
+The `vscode.commands` namespace provides functions to register and execute commands. Commands are central to how users interact with VS Code, accessible via keyboard shortcuts, menus, actions, and the Command Palette.
+
+## Key Functions
+
+### registerCommand
+
+Registers a command that can be invoked via keyboard shortcut, menu item, or Command Palette.
+
+```typescript
+function registerCommand(
+  command: string,
+  callback: (...args: any[]) => any,
+  thisArg?: any
+): Disposable
+```
+
+<ParamField path="command" type="string" required>
+  A unique identifier for the command (e.g., `"myExtension.doSomething"`)
+</ParamField>
+
+<ParamField path="callback" type="function" required>
+  The command handler function that executes when the command is invoked
+</ParamField>
+
+<ParamField path="thisArg" type="any">
+  The `this` context used when invoking the handler function
+</ParamField>
+
+**Example:**
+
+```typescript
+import * as vscode from 'vscode';
+
+export function activate(context: vscode.ExtensionContext) {
+  let disposable = vscode.commands.registerCommand(
+    'extension.sayHello',
+    () => {
+      vscode.window.showInformationMessage('Hello World!');
+    }
+  );
+
+  context.subscriptions.push(disposable);
+}
+```
+
+### registerTextEditorCommand
+
+Registers a text editor command with access to the active editor and edit builder.
+
+```typescript
+function registerTextEditorCommand(
+  command: string,
+  callback: (textEditor: TextEditor, edit: TextEditorEdit, ...args: any[]) => void,
+  thisArg?: any
+): Disposable
+```
+
+<ParamField path="command" type="string" required>
+  A unique identifier for the command
+</ParamField>
+
+<ParamField path="callback" type="function" required>
+  Handler with access to TextEditor and TextEditorEdit
+</ParamField>
+
+**Example:**
+
+```typescript
+vscode.commands.registerTextEditorCommand(
+  'extension.insertText',
+  (textEditor: vscode.TextEditor, edit: vscode.TextEditorEdit) => {
+    edit.insert(textEditor.selection.start, 'Hello from edit builder!');
+  }
+);
+```
+
+### executeCommand
+
+Executes a command by its identifier.
+
+```typescript
+function executeCommand<T = unknown>(
+  command: string,
+  ...rest: any[]
+): Thenable<T>
+```
+
+<ParamField path="command" type="string" required>
+  Identifier of the command to execute
+</ParamField>
+
+<ParamField path="rest" type="any[]">
+  Parameters passed to the command function
+</ParamField>
+
+**Example:**
+
+```typescript
+// Execute built-in command
+await vscode.commands.executeCommand('workbench.action.files.save');
+
+// Execute with arguments
+await vscode.commands.executeCommand(
+  'vscode.open',
+  vscode.Uri.file('/path/to/file')
+);
+```
+
+<Note>
+  When executing editor commands, only primitive types (string, boolean, number, undefined, null) and VS Code types (Position, Range, Uri, Location) are allowed as arguments.
+</Note>
+
+### getCommands
+
+Retrieves the list of all available commands.
+
+```typescript
+function getCommands(filterInternal?: boolean): Thenable<string[]>
+```
+
+<ParamField path="filterInternal" type="boolean">
+  Set `true` to exclude internal commands (those starting with underscore)
+</ParamField>
+
+**Example:**
+
+```typescript
+const allCommands = await vscode.commands.getCommands();
+const publicCommands = await vscode.commands.getCommands(true);
+console.log(`Total commands: ${allCommands.length}`);
+```
+
+## Common Built-in Commands
+
+VS Code provides many built-in commands you can execute:
+
+<Accordion title="File Operations">
+  - `workbench.action.files.save` - Save active file
+  - `workbench.action.files.saveAll` - Save all files
+  - `workbench.action.files.newUntitledFile` - Create new file
+  - `workbench.action.closeActiveEditor` - Close active editor
+</Accordion>
+
+<Accordion title="Editor Operations">
+  - `editor.action.formatDocument` - Format document
+  - `editor.action.commentLine` - Toggle line comment
+  - `editor.action.selectAll` - Select all text
+  - `editor.action.clipboardCopyAction` - Copy to clipboard
+</Accordion>
+
+<Accordion title="Navigation">
+  - `workbench.action.quickOpen` - Quick open file
+  - `workbench.action.showCommands` - Show command palette
+  - `workbench.action.gotoLine` - Go to line
+  - `workbench.action.navigateBack` - Navigate back
+</Accordion>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Naming Convention" icon="tag">
+    Use reverse domain notation for command IDs: `publisher.extension.commandName`
+  </Card>
+  <Card title="Dispose Properly" icon="trash">
+    Always add command disposables to `context.subscriptions`
+  </Card>
+  <Card title="Use Text Editor Commands" icon="pen-to-square">
+    For editor modifications, use `registerTextEditorCommand` for automatic edit builder access
+  </Card>
+  <Card title="Error Handling" icon="shield">
+    Wrap command logic in try-catch to handle errors gracefully
+  </Card>
+</CardGroup>
+
+## Related Resources
+
+<Card title="Contribution Points" icon="book" href="/api/advanced/contribution-points">
+  Learn how to declare commands in package.json
+</Card>

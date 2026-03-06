@@ -1,0 +1,330 @@
+---
+title: "Workspace API"
+description: "Work with files, folders, and workspace configuration"
+---
+
+## Overview
+
+The `vscode.workspace` namespace provides functions to work with the workspace, including accessing files and folders, managing configuration, and listening to file system events.
+
+## Workspace Folders
+
+### workspaceFolders
+
+All workspace folders opened in the editor.
+
+```typescript
+const workspaceFolders: readonly WorkspaceFolder[] | undefined
+```
+
+**Example:**
+
+```typescript
+import * as vscode from 'vscode';
+
+const folders = vscode.workspace.workspaceFolders;
+if (folders) {
+  folders.forEach(folder => {
+    console.log(`Folder: ${folder.name} at ${folder.uri.fsPath}`);
+  });
+}
+```
+
+### getWorkspaceFolder
+
+Get the workspace folder for a given URI.
+
+```typescript
+function getWorkspaceFolder(uri: Uri): WorkspaceFolder | undefined
+```
+
+**Example:**
+
+```typescript
+const document = vscode.window.activeTextEditor?.document;
+if (document) {
+  const folder = vscode.workspace.getWorkspaceFolder(document.uri);
+  console.log(`Document is in folder: ${folder?.name}`);
+}
+```
+
+## Configuration
+
+### getConfiguration
+
+Get workspace or section configuration.
+
+```typescript
+function getConfiguration(
+  section?: string,
+  scope?: ConfigurationScope
+): WorkspaceConfiguration
+```
+
+**Example:**
+
+```typescript
+// Get all configuration
+const config = vscode.workspace.getConfiguration();
+
+// Get section configuration
+const editorConfig = vscode.workspace.getConfiguration('editor');
+const fontSize = editorConfig.get<number>('fontSize');
+
+// Update configuration
+await editorConfig.update('fontSize', 14, vscode.ConfigurationTarget.Global);
+```
+
+<Note>
+  Configuration can be scoped to Global, Workspace, or WorkspaceFolder level.
+</Note>
+
+### onDidChangeConfiguration
+
+Event fired when configuration changes.
+
+```typescript
+const onDidChangeConfiguration: Event<ConfigurationChangeEvent>
+```
+
+**Example:**
+
+```typescript
+vscode.workspace.onDidChangeConfiguration(event => {
+  if (event.affectsConfiguration('myExtension.setting')) {
+    // Reload settings
+    const newValue = vscode.workspace
+      .getConfiguration('myExtension')
+      .get('setting');
+  }
+});
+```
+
+## File Operations
+
+### openTextDocument
+
+Open a text document.
+
+```typescript
+function openTextDocument(uri: Uri): Thenable<TextDocument>
+function openTextDocument(fileName: string): Thenable<TextDocument>
+```
+
+**Example:**
+
+```typescript
+// Open by URI
+const uri = vscode.Uri.file('/path/to/file.txt');
+const doc = await vscode.workspace.openTextDocument(uri);
+
+// Show in editor
+await vscode.window.showTextDocument(doc);
+
+// Create untitled document
+const untitled = await vscode.workspace.openTextDocument({
+  content: 'Hello World',
+  language: 'plaintext'
+});
+```
+
+### findFiles
+
+Find files across all workspace folders.
+
+```typescript
+function findFiles(
+  include: GlobPattern,
+  exclude?: GlobPattern,
+  maxResults?: number,
+  token?: CancellationToken
+): Thenable<Uri[]>
+```
+
+**Example:**
+
+```typescript
+// Find all TypeScript files
+const tsFiles = await vscode.workspace.findFiles('**/*.ts');
+
+// Find with exclusions
+const files = await vscode.workspace.findFiles(
+  '**/*.js',
+  '**/node_modules/**',
+  1000
+);
+
+console.log(`Found ${files.length} files`);
+```
+
+### fs
+
+File system provider for reading and writing files.
+
+```typescript
+const fs: FileSystem
+```
+
+**Example:**
+
+```typescript
+const uri = vscode.Uri.file('/path/to/file.txt');
+
+// Read file
+const content = await vscode.workspace.fs.readFile(uri);
+const text = new TextDecoder().decode(content);
+
+// Write file
+const data = new TextEncoder().encode('Hello World');
+await vscode.workspace.fs.writeFile(uri, data);
+
+// Create directory
+await vscode.workspace.fs.createDirectory(vscode.Uri.file('/path/to/dir'));
+
+// Delete file
+await vscode.workspace.fs.delete(uri);
+```
+
+## File System Events
+
+### onDidCreateFiles
+
+Fires when files are created.
+
+```typescript
+const onDidCreateFiles: Event<FileCreateEvent>
+```
+
+### onDidDeleteFiles
+
+Fires when files are deleted.
+
+```typescript
+const onDidDeleteFiles: Event<FileDeleteEvent>
+```
+
+### onDidRenameFiles
+
+Fires when files are renamed.
+
+```typescript
+const onDidRenameFiles: Event<FileRenameEvent>
+```
+
+**Example:**
+
+```typescript
+vscode.workspace.onDidCreateFiles(event => {
+  event.files.forEach(uri => {
+    console.log(`File created: ${uri.fsPath}`);
+  });
+});
+```
+
+## Text Document Events
+
+### onDidOpenTextDocument
+
+Fires when a text document is opened.
+
+```typescript
+const onDidOpenTextDocument: Event<TextDocument>
+```
+
+### onDidCloseTextDocument
+
+Fires when a text document is closed.
+
+```typescript
+const onDidCloseTextDocument: Event<TextDocument>
+```
+
+### onDidChangeTextDocument
+
+Fires when a text document changes.
+
+```typescript
+const onDidChangeTextDocument: Event<TextDocumentChangeEvent>
+```
+
+**Example:**
+
+```typescript
+vscode.workspace.onDidChangeTextDocument(event => {
+  const document = event.document;
+  const changes = event.contentChanges;
+  
+  console.log(`Document ${document.fileName} changed`);
+  console.log(`Number of changes: ${changes.length}`);
+});
+```
+
+### onDidSaveTextDocument
+
+Fires when a text document is saved.
+
+```typescript
+const onDidSaveTextDocument: Event<TextDocument>
+```
+
+## Text Editors
+
+### textDocuments
+
+All text documents currently known to the system.
+
+```typescript
+const textDocuments: readonly TextDocument[]
+```
+
+**Example:**
+
+```typescript
+const allDocs = vscode.workspace.textDocuments;
+const unsaved = allDocs.filter(doc => doc.isDirty);
+console.log(`${unsaved.length} unsaved documents`);
+```
+
+## Edit Operations
+
+### applyEdit
+
+Apply a workspace edit.
+
+```typescript
+function applyEdit(edit: WorkspaceEdit): Thenable<boolean>
+```
+
+**Example:**
+
+```typescript
+const edit = new vscode.WorkspaceEdit();
+
+// Edit a document
+const uri = vscode.Uri.file('/path/to/file.ts');
+edit.insert(uri, new vscode.Position(0, 0), '// Header comment\n');
+
+// Create a file
+const newFile = vscode.Uri.file('/path/to/new.ts');
+edit.createFile(newFile);
+
+// Apply all edits
+const success = await vscode.workspace.applyEdit(edit);
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Check Workspace Folders" icon="folder">
+    Always verify workspaceFolders exists before accessing it
+  </Card>
+  <Card title="Use Glob Patterns" icon="magnifying-glass">
+    Use appropriate glob patterns when searching files to avoid performance issues
+  </Card>
+  <Card title="Configuration Changes" icon="gear">
+    Listen to configuration changes and update your extension behavior accordingly
+  </Card>
+  <Card title="Batch Edits" icon="pen-to-square">
+    Use WorkspaceEdit for multiple file changes to enable undo/redo
+  </Card>
+</CardGroup>

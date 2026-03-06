@@ -1,0 +1,657 @@
+---
+title: Contribution Points
+description: Complete reference for VS Code extension contribution points
+---
+
+# Contribution Points
+
+Contribution points are the way your extension contributes functionality to VS Code. They are declared in the `contributes` section of your `package.json` file.
+
+## Overview
+
+Contributions are static declarations that tell VS Code what your extension provides. VS Code reads these declarations at startup to integrate your extension into the UI.
+
+```json
+{
+  "contributes": {
+    "commands": [...],
+    "menus": {...},
+    "keybindings": [...],
+    "languages": [...]
+  }
+}
+```
+
+## Commands
+
+Register commands that can be invoked from the Command Palette, keybindings, or menus.
+
+```json
+{
+  "contributes": {
+    "commands": [
+      {
+        "command": "myExtension.helloWorld",
+        "title": "Hello World",
+        "category": "My Extension",
+        "icon": "$(rocket)"
+      }
+    ]
+  }
+}
+```
+
+### Command Properties
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `command` | string | Yes | Unique identifier for the command |
+| `title` | string | Yes | Human-readable command name |
+| `category` | string | No | Groups related commands in Command Palette |
+| `icon` | string or object | No | Icon shown in UI (codicon or file path) |
+| `enablement` | string | No | When clause for enabling the command |
+
+<Accordion title="Real-world example from Git extension">
+```json
+{
+  "commands": [
+    {
+      "command": "git.clone",
+      "title": "%command.clone%",
+      "category": "Git",
+      "enablement": "!operationInProgress"
+    },
+    {
+      "command": "git.commit",
+      "title": "%command.commit%",
+      "category": "Git",
+      "icon": "$(check)",
+      "enablement": "!operationInProgress"
+    },
+    {
+      "command": "git.refresh",
+      "title": "%command.refresh%",
+      "category": "Git",
+      "icon": "$(refresh)",
+      "enablement": "!operationInProgress"
+    }
+  ]
+}
+```
+</Accordion>
+
+Implement the command handler in your extension code:
+
+```typescript
+import * as vscode from 'vscode';
+
+export function activate(context: vscode.ExtensionContext) {
+  const disposable = vscode.commands.registerCommand(
+    'myExtension.helloWorld',
+    () => {
+      vscode.window.showInformationMessage('Hello World!');
+    }
+  );
+  
+  context.subscriptions.push(disposable);
+}
+```
+
+## Menus
+
+Add items to various menus throughout VS Code.
+
+```json
+{
+  "contributes": {
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "myExtension.helloWorld",
+          "when": "editorLangId == javascript"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "myExtension.refactor",
+          "when": "editorHasSelection",
+          "group": "1_modification"
+        }
+      ]
+    }
+  }
+}
+```
+
+### Available Menu Locations
+
+<CodeGroup>
+```json commandPalette
+{
+  "menus": {
+    "commandPalette": [
+      {
+        "command": "myExtension.command",
+        "when": "editorLangId == javascript"
+      }
+    ]
+  }
+}
+```
+
+```json editor/context
+{
+  "menus": {
+    "editor/context": [
+      {
+        "command": "myExtension.command",
+        "group": "navigation",
+        "when": "resourceExtname == .js"
+      }
+    ]
+  }
+}
+```
+
+```json editor/title
+{
+  "menus": {
+    "editor/title": [
+      {
+        "command": "myExtension.command",
+        "group": "navigation",
+        "when": "resourceLangId == markdown"
+      }
+    ]
+  }
+}
+```
+
+```json explorer/context
+{
+  "menus": {
+    "explorer/context": [
+      {
+        "command": "myExtension.command",
+        "group": "2_workspace",
+        "when": "explorerResourceIsFolder"
+      }
+    ]
+  }
+}
+```
+</CodeGroup>
+
+### Menu Groups
+
+Organize menu items using groups (items in the same group appear together):
+
+- `navigation` - Top of the menu (most prominent)
+- `1_modification` - Edit operations
+- `2_workspace` - Workspace operations  
+- `3_compare` - Compare operations
+- `z_commands` - Other commands (bottom)
+
+<Note>
+Groups are sorted alphanumerically. Within a group, items are sorted by their order of contribution.
+</Note>
+
+## Keybindings
+
+Define keyboard shortcuts for your commands.
+
+```json
+{
+  "contributes": {
+    "keybindings": [
+      {
+        "command": "myExtension.helloWorld",
+        "key": "ctrl+shift+h",
+        "mac": "cmd+shift+h",
+        "when": "editorTextFocus"
+      }
+    ]
+  }
+}
+```
+
+<Accordion title="Real-world example from Git extension">
+```json
+{
+  "keybindings": [
+    {
+      "command": "git.stageSelectedRanges",
+      "key": "ctrl+k ctrl+alt+s",
+      "mac": "cmd+k cmd+alt+s",
+      "when": "editorTextFocus && resourceScheme == file"
+    },
+    {
+      "command": "git.revertSelectedRanges",
+      "key": "ctrl+k ctrl+r",
+      "mac": "cmd+k cmd+r",
+      "when": "editorTextFocus && resourceScheme == file"
+    }
+  ]
+}
+```
+</Accordion>
+
+<Warning>
+Avoid conflicts with built-in keybindings. Users can always override keybindings in their settings.
+</Warning>
+
+## Languages
+
+Register a new language or extend an existing one.
+
+```json
+{
+  "contributes": {
+    "languages": [
+      {
+        "id": "mylang",
+        "aliases": ["MyLanguage", "mylang"],
+        "extensions": [".mylang", ".ml"],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/mylang-light.svg",
+          "dark": "./icons/mylang-dark.svg"
+        }
+      }
+    ]
+  }
+}
+```
+
+### Language Configuration
+
+The `language-configuration.json` file defines:
+
+```json
+{
+  "comments": {
+    "lineComment": "//",
+    "blockComment": ["/*", "*/"]
+  },
+  "brackets": [
+    ["{", "}"],
+    ["[", "]"],
+    ["(", ")"]
+  ],
+  "autoClosingPairs": [
+    { "open": "{", "close": "}" },
+    { "open": "[", "close": "]" },
+    { "open": "(", "close": ")" },
+    { "open": "'", "close": "'", "notIn": ["string", "comment"] },
+    { "open": "\"", "close": "\"", "notIn": ["string"] }
+  ],
+  "surroundingPairs": [
+    ["{", "}"],
+    ["[", "]"],
+    ["(", ")"],
+    ["'", "'"],
+    ["\"", "\""]
+  ]
+}
+```
+
+## Grammars
+
+Provide syntax highlighting using TextMate grammars.
+
+```json
+{
+  "contributes": {
+    "grammars": [
+      {
+        "language": "mylang",
+        "scopeName": "source.mylang",
+        "path": "./syntaxes/mylang.tmLanguage.json"
+      }
+    ]
+  }
+}
+```
+
+## Themes
+
+Contribute color themes and icon themes.
+
+```json
+{
+  "contributes": {
+    "themes": [
+      {
+        "label": "My Dark Theme",
+        "uiTheme": "vs-dark",
+        "path": "./themes/dark-theme.json"
+      }
+    ],
+    "iconThemes": [
+      {
+        "id": "myIconTheme",
+        "label": "My Icons",
+        "path": "./icons/icon-theme.json"
+      }
+    ]
+  }
+}
+```
+
+## Views
+
+Add custom views to VS Code's sidebar, panel, or other containers.
+
+```json
+{
+  "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "id": "myExtension.myView",
+          "name": "My Custom View",
+          "icon": "resources/view-icon.svg",
+          "contextualTitle": "My Extension"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "myExtension-sidebar",
+          "title": "My Extension",
+          "icon": "resources/sidebar-icon.svg"
+        }
+      ]
+    }
+  }
+}
+```
+
+### View Containers
+
+Views can be placed in these containers:
+- `explorer` - File Explorer sidebar
+- `scm` - Source Control sidebar
+- `debug` - Debug sidebar  
+- `test` - Testing sidebar
+- `panel` - Bottom panel
+- Custom containers defined in `viewsContainers`
+
+## Configuration
+
+Expose settings that users can configure.
+
+```json
+{
+  "contributes": {
+    "configuration": {
+      "title": "My Extension",
+      "properties": {
+        "myExtension.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable My Extension features"
+        },
+        "myExtension.maxItems": {
+          "type": "number",
+          "default": 10,
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Maximum number of items to show"
+        },
+        "myExtension.mode": {
+          "type": "string",
+          "enum": ["auto", "manual"],
+          "default": "auto",
+          "enumDescriptions": [
+            "Automatic mode",
+            "Manual mode"
+          ],
+          "description": "Operation mode"
+        }
+      }
+    }
+  }
+}
+```
+
+Access configuration in your code:
+
+```typescript
+const config = vscode.workspace.getConfiguration('myExtension');
+const isEnabled = config.get<boolean>('enable');
+const maxItems = config.get<number>('maxItems');
+```
+
+## Snippets
+
+Provide code snippets for languages.
+
+```json
+{
+  "contributes": {
+    "snippets": [
+      {
+        "language": "javascript",
+        "path": "./snippets/javascript.json"
+      },
+      {
+        "language": "typescript",
+        "path": "./snippets/typescript.json"
+      }
+    ]
+  }
+}
+```
+
+Snippet file format:
+
+```json
+{
+  "For Loop": {
+    "prefix": "for",
+    "body": [
+      "for (let ${1:i} = 0; ${1:i} < ${2:array}.length; ${1:i}++) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "For Loop"
+  }
+}
+```
+
+## Debuggers
+
+Contribute debug adapters for new languages or runtimes.
+
+```json
+{
+  "contributes": {
+    "debuggers": [
+      {
+        "type": "mylang",
+        "label": "MyLang Debug",
+        "program": "./out/debugAdapter.js",
+        "runtime": "node",
+        "configurationAttributes": {
+          "launch": {
+            "required": ["program"],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Absolute path to program"
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "mylang",
+            "request": "launch",
+            "name": "Launch Program",
+            "program": "${workspaceFolder}/main.ml"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Task Providers
+
+Define task types that can be detected and run.
+
+```json
+{
+  "contributes": {
+    "taskDefinitions": [
+      {
+        "type": "mytask",
+        "required": ["script"],
+        "properties": {
+          "script": {
+            "type": "string",
+            "description": "The script to run"
+          },
+          "args": {
+            "type": "array",
+            "description": "Additional arguments"
+          }
+        }
+      }
+    ]
+  }
+}
+```
+
+## JSON Validation
+
+Provide JSON schema validation for specific files.
+
+```json
+{
+  "contributes": {
+    "jsonValidation": [
+      {
+        "fileMatch": "package.json",
+        "url": "./schemas/package.schema.json"
+      },
+      {
+        "fileMatch": "config/*.json",
+        "url": "https://example.com/schema.json"
+      }
+    ]
+  }
+}
+```
+
+<Accordion title="Real-world example from TypeScript extension">
+```json
+{
+  "jsonValidation": [
+    {
+      "fileMatch": "tsconfig.json",
+      "url": "https://www.schemastore.org/tsconfig"
+    },
+    {
+      "fileMatch": "jsconfig.json",
+      "url": "https://www.schemastore.org/jsconfig"
+    },
+    {
+      "fileMatch": "package.json",
+      "url": "./schemas/package.schema.json"
+    }
+  ]
+}
+```
+</Accordion>
+
+## Walkthroughs
+
+Create interactive getting started experiences.
+
+```json
+{
+  "contributes": {
+    "walkthroughs": [
+      {
+        "id": "myExtension.welcome",
+        "title": "Get Started with My Extension",
+        "description": "Learn the basics",
+        "steps": [
+          {
+            "id": "install",
+            "title": "Install Dependencies",
+            "description": "Install required tools\n[Install](command:myExtension.install)",
+            "media": {
+              "image": "media/install.png",
+              "altText": "Installation"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Authentication Providers
+
+Register authentication providers for your service.
+
+```json
+{
+  "contributes": {
+    "authentication": [
+      {
+        "id": "myService",
+        "label": "My Service"
+      }
+    ]
+  }
+}
+```
+
+## Testing
+
+Contribute test controllers for running and debugging tests.
+
+```json
+{
+  "contributes": {
+    "testing": {
+      "providers": [
+        {
+          "id": "myExtension.testProvider",
+          "label": "My Test Provider"
+        }
+      ]
+    }
+  }
+}
+```
+
+## Best Practices
+
+<Card title="Contribution Guidelines" icon="check">
+1. **Use categories**: Group related commands with categories
+2. **Provide icons**: Use codicons for consistency
+3. **Write clear titles**: Make command names descriptive
+4. **Add when clauses**: Control when contributions are available
+5. **Localize strings**: Use `%key%` syntax for internationalization
+</Card>
+
+<Note>
+Strings starting with `%` are localized from the `package.nls.json` file, allowing for multi-language support.
+</Note>
+
+## Validation
+
+VS Code validates your `package.json` contributions. Common issues:
+
+- Commands referenced in menus must be declared in `contributes.commands`
+- View IDs must be unique across all extensions
+- Configuration property names should use the pattern `extensionName.propertyName`
+- Language IDs should be lowercase and use hyphens, not spaces

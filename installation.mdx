@@ -1,0 +1,706 @@
+---
+title: 'Installation'
+description: 'Complete installation guide for Visual Studio Code on all platforms'
+---
+
+## System Requirements
+
+Before installing Visual Studio Code, ensure your system meets these requirements:
+
+### Minimum Requirements
+
+<CardGroup cols={3}>
+  <Card title="Processor" icon="microchip">
+    1.6 GHz or faster processor
+  </Card>
+  <Card title="Memory" icon="memory">
+    1 GB RAM minimum
+    
+    2 GB RAM recommended
+  </Card>
+  <Card title="Storage" icon="hard-drive">
+    200 MB disk space
+  </Card>
+</CardGroup>
+
+### Operating System Support
+
+- **Windows**: Windows 10 or later (64-bit)
+- **macOS**: macOS 10.15 Catalina or later
+- **Linux**: RHEL 8+, Debian 10+, Ubuntu 20.04+, Fedora 36+
+
+<Note>
+  VS Code is built on Electron version **39.6.0** and uses Node.js for extension development. The current version is **1.111.0**.
+</Note>
+
+## Installation by Platform
+
+<Tabs>
+  <Tab title="Windows">
+    ### Windows Installation
+
+    Visual Studio Code supports both user-level and system-level installations on Windows.
+
+    <Steps>
+      <Step title="Download the Installer">
+        Download the appropriate Windows installer:
+        
+        - **User Installer** (recommended): Installs for the current user only, doesn't require admin privileges
+        - **System Installer**: Installs for all users, requires administrator privileges
+        - **Portable Mode**: Run VS Code from a USB drive without installation
+
+        Choose your architecture:
+        - **64-bit** (x64) - Most modern Windows systems
+        - **ARM64** - For ARM-based Windows devices
+
+        <Warning>
+          The 32-bit (x86) version is no longer supported as of VS Code 1.83. Use the 64-bit version instead.
+        </Warning>
+      </Step>
+
+      <Step title="Run the Installer">
+        1. Double-click the downloaded `.exe` file
+        2. Accept the license agreement
+        3. Choose installation location (default: `%LocalAppData%\Programs\Microsoft VS Code` for user installer)
+        4. Select additional tasks:
+           - Add "Open with Code" to Windows Explorer context menu
+           - Add "Open with Code" to directory context menu
+           - Register Code as an editor for supported file types
+           - Add to PATH (allows using `code` command from terminal)
+        5. Click **Install** to begin installation
+
+        ```powershell
+        # The installer adds VS Code to PATH, allowing you to launch it from PowerShell:
+        code .
+        ```
+      </Step>
+
+      <Step title="Launch VS Code">
+        After installation completes:
+        
+        - Launch from the Start menu
+        - Use the desktop shortcut (if created)
+        - Run `code` from Command Prompt or PowerShell
+        - Right-click any folder and select "Open with Code"
+
+        <Tip>
+          Press `Win+R`, type `code`, and press Enter to quickly launch VS Code.
+        </Tip>
+      </Step>
+    </Steps>
+
+    ### Windows-Specific Features
+
+    **Windows Subsystem for Linux (WSL) Support**
+    
+    VS Code integrates seamlessly with WSL, allowing you to develop in a Linux environment:
+
+    ```bash
+    # Install the Remote - WSL extension
+    code --install-extension ms-vscode-remote.remote-wsl
+
+    # Open a folder in WSL from Windows
+    wsl
+    cd /home/username/project
+    code .
+    ```
+
+    **Windows Terminal Integration**
+
+    Set VS Code as your default editor in Windows Terminal:
+
+    ```json
+    {
+      "defaultProfile": "{guid}",
+      "profiles": {
+        "defaults": {
+          "environment": {
+            "EDITOR": "code --wait"
+          }
+        }
+      }
+    }
+    ```
+
+    ### Silent Installation
+
+    For automated deployments:
+
+    ```cmd
+    # User Installer
+    VSCodeUserSetup-x64-1.111.0.exe /VERYSILENT /MERGETASKS=!runcode
+
+    # System Installer
+    VSCodeSetup-x64-1.111.0.exe /VERYSILENT /MERGETASKS=!runcode
+    ```
+
+    ### Portable Mode
+
+    Create a `data` folder next to the VS Code executable to enable portable mode:
+
+    ```cmd
+    VSCode-win32-x64
+    ├── Code.exe
+    ├── data
+    │   ├── user-data
+    │   └── extensions
+    └── ...
+    ```
+  </Tab>
+
+  <Tab title="macOS">
+    ### macOS Installation
+
+    <Steps>
+      <Step title="Download for macOS">
+        Download the appropriate version for your Mac:
+        
+        - **Intel Chip**: Download the x64 version
+        - **Apple Silicon (M1/M2/M3)**: Download the ARM64 version
+
+        To check your chip type:
+        ```bash
+        # Check processor type
+        uname -m
+        # arm64 = Apple Silicon, x86_64 = Intel
+        ```
+      </Step>
+
+      <Step title="Install from ZIP">
+        1. Download the `.zip` file for your architecture
+        2. Open the downloaded file (Safari will unzip automatically)
+        3. Drag **Visual Studio Code.app** to your **Applications** folder
+        4. Launch from Applications or Spotlight (press `Cmd+Space`, type "Visual Studio Code")
+
+        <Note>
+          On first launch, macOS may show a security warning. Click **Open** to confirm you want to run the application.
+        </Note>
+      </Step>
+
+      <Step title="Add to PATH">
+        Enable the `code` command in your terminal:
+
+        1. Launch VS Code
+        2. Open Command Palette (`Cmd+Shift+P`)
+        3. Type "shell command" and select **Shell Command: Install 'code' command in PATH**
+
+        Now you can open files and folders from the terminal:
+        ```bash
+        # Open current directory
+        code .
+
+        # Open a specific file
+        code myfile.js
+
+        # Open a folder
+        code ~/projects/my-app
+        ```
+      </Step>
+    </Steps>
+
+    ### Alternative Installation Methods
+
+    **Homebrew**
+
+    Install using Homebrew package manager:
+
+    ```bash
+    # Install Homebrew if you don't have it
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+    # Install VS Code
+    brew install --cask visual-studio-code
+
+    # Update VS Code
+    brew upgrade --cask visual-studio-code
+    ```
+
+    **MacPorts**
+
+    ```bash
+    sudo port install vscode
+    ```
+
+    ### macOS-Specific Configuration
+
+    **Touch Bar Support**
+
+    If you have a MacBook with Touch Bar, VS Code provides contextual controls:
+
+    ```json
+    {
+      "keyboard.touchbar.enabled": true,
+      "keyboard.touchbar.ignored": []
+    }
+    ```
+
+    **File Associations**
+
+    Set VS Code as the default editor for specific file types:
+
+    1. Right-click a file in Finder
+    2. Select **Get Info**
+    3. Under **Open with**, select Visual Studio Code
+    4. Click **Change All** to apply to all files of this type
+
+    ### Uninstallation
+
+    ```bash
+    # Remove the application
+    rm -rf "/Applications/Visual Studio Code.app"
+
+    # Remove user data
+    rm -rf "$HOME/Library/Application Support/Code"
+    rm -rf "$HOME/.vscode"
+    ```
+  </Tab>
+
+  <Tab title="Linux">
+    ### Linux Installation
+
+    VS Code provides `.deb` and `.rpm` packages, as well as a Snap package.
+
+    <Steps>
+      <Step title="Debian/Ubuntu Installation">
+        **Method 1: Download and Install .deb Package**
+
+        ```bash
+        # Download the .deb package (64-bit)
+        wget -O code.deb 'https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64'
+
+        # Install the package
+        sudo dpkg -i code.deb
+
+        # Install dependencies if needed
+        sudo apt-get install -f
+        ```
+
+        **Method 2: Use Microsoft Repository (Recommended)**
+
+        This method enables automatic updates:
+
+        ```bash
+        # Install required packages
+        sudo apt-get update
+        sudo apt-get install wget gpg
+
+        # Download and install Microsoft GPG key
+        wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+        sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+
+        # Add VS Code repository
+        echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" | sudo tee /etc/apt/sources.list.d/vscode.list > /dev/null
+
+        # Update package cache and install
+        sudo apt update
+        sudo apt install code
+        ```
+
+        <Tip>
+          The repository method allows you to update VS Code with `sudo apt update && sudo apt upgrade`.
+        </Tip>
+      </Step>
+
+      <Step title="RHEL/Fedora/CentOS Installation">
+        **Method 1: Download and Install .rpm Package**
+
+        ```bash
+        # Download the .rpm package (64-bit)
+        wget -O code.rpm 'https://code.visualstudio.com/sha/download?build=stable&os=linux-rpm-x64'
+
+        # Install on RHEL/Fedora/CentOS
+        sudo rpm -i code.rpm
+
+        # Or use dnf on Fedora
+        sudo dnf install code.rpm
+        ```
+
+        **Method 2: Use Microsoft Repository**
+
+        ```bash
+        # Import Microsoft GPG key
+        sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+
+        # Add repository (Fedora/RHEL 8+)
+        sudo sh -c 'echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
+
+        # Update cache and install (RHEL/CentOS)
+        sudo yum check-update
+        sudo yum install code
+
+        # Or on Fedora
+        sudo dnf check-update
+        sudo dnf install code
+        ```
+      </Step>
+
+      <Step title="Snap Installation (Universal)">
+        Snap packages work across many Linux distributions:
+
+        ```bash
+        # Install via Snap
+        sudo snap install --classic code
+
+        # Update VS Code
+        sudo snap refresh code
+        ```
+
+        <Note>
+          The `--classic` flag is required because VS Code needs full system access.
+        </Note>
+      </Step>
+
+      <Step title="Arch Linux">
+        VS Code is available in the Arch User Repository (AUR):
+
+        ```bash
+        # Using yay
+        yay -S visual-studio-code-bin
+
+        # Or using paru
+        paru -S visual-studio-code-bin
+
+        # Manual installation from AUR
+        git clone https://aur.archlinux.org/visual-studio-code-bin.git
+        cd visual-studio-code-bin
+        makepkg -si
+        ```
+      </Step>
+    </Steps>
+
+    ### Linux-Specific Configuration
+
+    **Desktop Entry**
+
+    VS Code creates a desktop entry at `/usr/share/applications/code.desktop`. You can customize it:
+
+    ```desktop
+    [Desktop Entry]
+    Name=Visual Studio Code
+    Comment=Code Editing. Redefined.
+    GenericName=Text Editor
+    Exec=/usr/bin/code --no-sandbox --unity-launch %F
+    Icon=com.visualstudio.code
+    Type=Application
+    StartupNotify=false
+    Categories=Utility;TextEditor;Development;IDE;
+    MimeType=text/plain;inode/directory;
+    Actions=new-empty-window;
+    Keywords=vscode;
+    ```
+
+    **Running as Root (Not Recommended)**
+
+    If absolutely necessary:
+
+    ```bash
+    code --user-data-dir="/root/.vscode-root" --no-sandbox
+    ```
+
+    <Warning>
+      Running VS Code as root is not recommended for security reasons. Use a regular user account instead.
+    </Warning>
+
+    **GPU Acceleration Issues**
+
+    If you experience graphical glitches:
+
+    ```bash
+    # Disable GPU acceleration
+    code --disable-gpu
+
+    # Or add to your settings
+    code --disable-gpu-sandbox
+    ```
+  </Tab>
+</Tabs>
+
+## Post-Installation Setup
+
+### Verify Installation
+
+Confirm VS Code is installed correctly:
+
+```bash
+# Check VS Code version
+code --version
+
+# Expected output:
+# 1.111.0
+# e802965a9da346fb619bb708f64e54e927167133
+# x64
+```
+
+### Initial Configuration
+
+<Steps>
+  <Step title="Choose a Color Theme">
+    1. Open Command Palette: `Ctrl+Shift+P` (Windows/Linux) or `Cmd+Shift+P` (macOS)
+    2. Type "Color Theme"
+    3. Select from built-in themes or install custom themes from the marketplace
+
+    Popular themes:
+    - **Dark+** (Default dark)
+    - **Light+** (Default light)
+    - **Monokai**
+    - **Solarized Dark/Light**
+  </Step>
+
+  <Step title="Configure Auto-Save">
+    Enable automatic file saving:
+
+    ```json
+    {
+      "files.autoSave": "afterDelay",
+      "files.autoSaveDelay": 1000
+    }
+    ```
+
+    Options:
+    - `off`: Disable auto-save (default)
+    - `afterDelay`: Save after a delay
+    - `onFocusChange`: Save when editor loses focus
+    - `onWindowChange`: Save when window loses focus
+  </Step>
+
+  <Step title="Set Up Extensions">
+    Install essential extensions:
+
+    ```bash
+    # Install via command line
+    code --install-extension ms-python.python
+    code --install-extension dbaeumer.vscode-eslint
+    code --install-extension esbenp.prettier-vscode
+    code --install-extension eamodio.gitlens
+
+    # List installed extensions
+    code --list-extensions
+    ```
+  </Step>
+
+  <Step title="Configure Git Integration">
+    VS Code has built-in Git support. Configure your Git settings:
+
+    ```bash
+    # Set your identity
+    git config --global user.name "Your Name"
+    git config --global user.email "your.email@example.com"
+
+    # Set VS Code as default editor for Git
+    git config --global core.editor "code --wait"
+
+    # Use VS Code as diff tool
+    git config --global diff.tool vscode
+    git config --global difftool.vscode.cmd "code --wait --diff $LOCAL $REMOTE"
+    ```
+  </Step>
+</Steps>
+
+## Advanced Installation Options
+
+### Development Container
+
+For contributing to VS Code or developing in isolated environments:
+
+```bash
+# Clone the repository
+git clone https://github.com/microsoft/vscode.git
+cd vscode
+
+# Install dependencies
+npm install
+
+# Build from source
+npm run compile
+
+# Launch development version
+bash scripts/code.sh
+```
+
+<Note>
+  Building from source requires at least **4 Cores and 8 GB of RAM** (9 GB recommended). See the [development container README](.devcontainer/README.md) for details.
+</Note>
+
+### Enterprise Deployment
+
+**Group Policy (Windows)**
+
+Configure VS Code across an organization:
+
+```powershell
+# Disable automatic updates
+New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\VisualStudioCode" -Name "Update" -Value "none" -PropertyType String
+
+# Set telemetry level
+New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\VisualStudioCode" -Name "TelemetryLevel" -Value "off" -PropertyType String
+```
+
+**Configuration Management**
+
+Deploy settings via configuration files:
+
+```bash
+# User settings location:
+# Windows: %APPDATA%\Code\User\settings.json
+# macOS: ~/Library/Application Support/Code/User/settings.json
+# Linux: ~/.config/Code/User/settings.json
+```
+
+## Updating VS Code
+
+<Tabs>
+  <Tab title="Windows">
+    VS Code automatically checks for updates. When available:
+    
+    1. Click the gear icon (⚙️) in the lower-left corner
+    2. Select **Check for Updates**
+    3. Follow prompts to download and install
+
+    Or download the latest installer manually.
+  </Tab>
+
+  <Tab title="macOS">
+    **Automatic Updates**
+    
+    VS Code checks for updates automatically.
+
+    **Manual Update**
+    
+    ```bash
+    # If installed via Homebrew
+    brew upgrade --cask visual-studio-code
+    ```
+  </Tab>
+
+  <Tab title="Linux">
+    ```bash
+    # Debian/Ubuntu (if using repository)
+    sudo apt update
+    sudo apt upgrade code
+
+    # RHEL/Fedora/CentOS
+    sudo dnf upgrade code
+
+    # Snap
+    sudo snap refresh code
+    ```
+  </Tab>
+</Tabs>
+
+## Uninstalling VS Code
+
+<Tabs>
+  <Tab title="Windows">
+    **Using Control Panel**
+    
+    1. Open **Settings > Apps > Installed apps**
+    2. Search for "Visual Studio Code"
+    3. Click **Uninstall**
+
+    **Remove User Data**
+    
+    ```powershell
+    # Remove settings and extensions
+    Remove-Item -Recurse -Force $env:APPDATA\Code
+    Remove-Item -Recurse -Force $env:USERPROFILE\.vscode
+    ```
+  </Tab>
+
+  <Tab title="macOS">
+    ```bash
+    # Remove application
+    rm -rf "/Applications/Visual Studio Code.app"
+
+    # Remove user data
+    rm -rf "$HOME/Library/Application Support/Code"
+    rm -rf "$HOME/.vscode"
+    ```
+  </Tab>
+
+  <Tab title="Linux">
+    ```bash
+    # Debian/Ubuntu
+    sudo apt remove code
+    sudo apt purge code
+
+    # RHEL/Fedora
+    sudo dnf remove code
+
+    # Snap
+    sudo snap remove code
+
+    # Remove user data
+    rm -rf ~/.config/Code
+    rm -rf ~/.vscode
+    ```
+  </Tab>
+</Tabs>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="VS Code won't start on Linux">
+    This is often due to missing dependencies:
+
+    ```bash
+    # Install missing libraries (Debian/Ubuntu)
+    sudo apt-get install libxss1 libgconf-2-4 libnss3 libasound2
+
+    # Check for errors
+    code --verbose
+    ```
+  </Accordion>
+
+  <Accordion title="Permission denied errors on macOS">
+    Reset application permissions:
+
+    ```bash
+    # Fix permissions
+    sudo xattr -r -d com.apple.quarantine "/Applications/Visual Studio Code.app"
+    ```
+  </Accordion>
+
+  <Accordion title="Slow startup on Windows">
+    Disable Windows Defender scanning:
+
+    1. Open Windows Security
+    2. Go to **Virus & threat protection > Manage settings**
+    3. Add exclusions for:
+       - `%LOCALAPPDATA%\Programs\Microsoft VS Code`
+       - `%APPDATA%\Code`
+       - Your project folders
+  </Accordion>
+
+  <Accordion title="Certificate errors behind corporate proxy">
+    Configure proxy settings:
+
+    ```json
+    {
+      "http.proxy": "http://proxy.company.com:8080",
+      "http.proxyStrictSSL": false
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+Now that VS Code is installed:
+
+<CardGroup cols={2}>
+  <Card title="Quickstart Guide" icon="rocket" href="/quickstart">
+    Learn the basics and write your first code
+  </Card>
+
+  <Card title="Keyboard Shortcuts" icon="keyboard">
+    Master essential shortcuts to boost productivity
+  </Card>
+
+  <Card title="Extensions" icon="puzzle-piece">
+    Customize VS Code with extensions for your workflow
+  </Card>
+
+  <Card title="Settings Sync" icon="cloud">
+    Sync your settings across multiple machines
+  </Card>
+</CardGroup>

@@ -1,0 +1,352 @@
+---
+title: 'Language Providers'
+description: 'Implement IntelliSense features like completion, hover, and go-to-definition for your language'
+---
+
+# Language Providers
+
+Language providers enable rich IntelliSense features in VS Code such as auto-completion, hover information, signature help, and go-to-definition. These providers form the foundation of language support in the editor.
+
+## Overview
+
+Language providers are registered for specific language identifiers or document selectors. They respond to user interactions by returning language-specific information that the editor displays.
+
+### Common Use Cases
+
+- Adding autocomplete suggestions for custom languages
+- Providing hover documentation for symbols
+- Implementing go-to-definition for function calls
+- Showing references to variables and functions
+- Adding diagnostic information (errors and warnings)
+
+## Completion Provider
+
+The completion provider powers IntelliSense by suggesting completions as users type.
+
+### Interface
+
+```typescript
+interface CompletionItemProvider<T extends CompletionItem = CompletionItem> {
+  provideCompletionItems(
+    document: TextDocument,
+    position: Position,
+    token: CancellationToken,
+    context: CompletionContext
+  ): ProviderResult<T[] | CompletionList<T>>;
+
+  resolveCompletionItem?(item: T, token: CancellationToken): ProviderResult<T>;
+}
+```
+
+### Implementation
+
+<Steps>
+  <Step title="Create the provider">
+    Implement the `CompletionItemProvider` interface:
+
+    ```typescript
+    import * as vscode from 'vscode';
+
+    class MyCompletionProvider implements vscode.CompletionItemProvider {
+      provideCompletionItems(
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        token: vscode.CancellationToken,
+        context: vscode.CompletionContext
+      ): vscode.ProviderResult<vscode.CompletionItem[]> {
+        // Get the word at the current position
+        const linePrefix = document.lineAt(position).text.substr(0, position.character);
+        
+        // Create completion items
+        const completions: vscode.CompletionItem[] = [];
+        
+        const functionItem = new vscode.CompletionItem('myFunction', vscode.CompletionItemKind.Function);
+        functionItem.detail = 'Custom function';
+        functionItem.documentation = new vscode.MarkdownString('Does something **amazing**');
+        functionItem.insertText = new vscode.SnippetString('myFunction(${1:param})');
+        completions.push(functionItem);
+        
+        const variableItem = new vscode.CompletionItem('myVariable', vscode.CompletionItemKind.Variable);
+        variableItem.detail = 'string';
+        variableItem.documentation = 'A custom variable';
+        completions.push(variableItem);
+        
+        return completions;
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Register the provider">
+    Register your completion provider with the languages API:
+
+    ```typescript
+    export function activate(context: vscode.ExtensionContext) {
+      const provider = new MyCompletionProvider();
+      
+      const disposable = vscode.languages.registerCompletionItemProvider(
+        'javascript', // Language selector
+        provider,
+        '.', // Trigger characters
+        '('
+      );
+      
+      context.subscriptions.push(disposable);
+    }
+    ```
+  </Step>
+
+  <Step title="Add resolution (optional)">
+    Implement `resolveCompletionItem` to lazily compute expensive properties:
+
+    ```typescript
+    resolveCompletionItem(
+      item: vscode.CompletionItem,
+      token: vscode.CancellationToken
+    ): vscode.ProviderResult<vscode.CompletionItem> {
+      // Only compute detailed documentation when item is selected
+      if (item.label === 'myFunction') {
+        item.documentation = new vscode.MarkdownString(
+          '## Detailed Documentation\n\n' +
+          'This function performs complex operations...'
+        );
+      }
+      return item;
+    }
+    ```
+  </Step>
+</Steps>
+
+## Hover Provider
+
+The hover provider displays information when users hover over symbols.
+
+### Interface
+
+```typescript
+interface HoverProvider {
+  provideHover(
+    document: TextDocument,
+    position: Position,
+    token: CancellationToken
+  ): ProviderResult<Hover>;
+}
+```
+
+### Implementation
+
+```typescript
+class MyHoverProvider implements vscode.HoverProvider {
+  provideHover(
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    token: vscode.CancellationToken
+  ): vscode.ProviderResult<vscode.Hover> {
+    const range = document.getWordRangeAtPosition(position);
+    const word = document.getText(range);
+    
+    if (word === 'myFunction') {
+      const contents = new vscode.MarkdownString();
+      contents.appendCodeblock('function myFunction(param: string): void', 'typescript');
+      contents.appendMarkdown('\n\nPerforms an **important** operation.');
+      contents.appendMarkdown('\n\n[View Documentation](https://example.com)');
+      contents.isTrusted = true; // Enable command links
+      
+      return new vscode.Hover(contents, range);
+    }
+    
+    return null;
+  }
+}
+
+// Register
+vscode.languages.registerHoverProvider('javascript', new MyHoverProvider());
+```
+
+## Definition Provider
+
+The definition provider implements "Go to Definition" functionality.
+
+### Interface
+
+```typescript
+interface DefinitionProvider {
+  provideDefinition(
+    document: TextDocument,
+    position: Position,
+    token: CancellationToken
+  ): ProviderResult<Definition | DefinitionLink[]>;
+}
+```
+
+### Implementation
+
+```typescript
+class MyDefinitionProvider implements vscode.DefinitionProvider {
+  provideDefinition(
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    token: vscode.CancellationToken
+  ): vscode.ProviderResult<vscode.Definition> {
+    const range = document.getWordRangeAtPosition(position);
+    const word = document.getText(range);
+    
+    // Find the definition location (simplified example)
+    if (word === 'myFunction') {
+      // Return location of definition
+      return new vscode.Location(
+        vscode.Uri.file('/path/to/definition.js'),
+        new vscode.Position(10, 0)
+      );
+    }
+    
+    return null;
+  }
+}
+
+// Register
+vscode.languages.registerDefinitionProvider(
+  'javascript',
+  new MyDefinitionProvider()
+);
+```
+
+<Note>
+For better performance with "peek definition", return `DefinitionLink[]` which includes the target range and origin selection range.
+</Note>
+
+## Best Practices
+
+### Performance Optimization
+
+<CodeGroup>
+```typescript Async Processing
+class OptimizedCompletionProvider implements vscode.CompletionItemProvider {
+  async provideCompletionItems(
+    document: vscode.TextDocument,
+    position: vscode.Position
+  ): Promise<vscode.CompletionItem[]> {
+    // Use async operations for expensive computations
+    const items = await this.fetchCompletionsFromServer();
+    return items;
+  }
+  
+  private async fetchCompletionsFromServer(): Promise<vscode.CompletionItem[]> {
+    // Simulate API call
+    return new Promise((resolve) => {
+      setTimeout(() => resolve([]), 100);
+    });
+  }
+}
+```
+
+```typescript Cancellation Support
+class CancellableProvider implements vscode.CompletionItemProvider {
+  provideCompletionItems(
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    token: vscode.CancellationToken
+  ): vscode.ProviderResult<vscode.CompletionItem[]> {
+    return new Promise((resolve, reject) => {
+      // Check cancellation
+      if (token.isCancellationRequested) {
+        return reject(new Error('Cancelled'));
+      }
+      
+      // Listen for cancellation during processing
+      token.onCancellationRequested(() => {
+        reject(new Error('Cancelled'));
+      });
+      
+      // Perform work...
+      const results = this.computeResults();
+      resolve(results);
+    });
+  }
+}
+```
+</CodeGroup>
+
+### Completion Item Configuration
+
+```typescript
+const item = new vscode.CompletionItem('myItem', vscode.CompletionItemKind.Function);
+
+// Control sorting and filtering
+item.sortText = '0001'; // Controls order in list
+item.filterText = 'myitem myfunction'; // Additional text for filtering
+
+// Set insert behavior
+item.insertText = new vscode.SnippetString('myItem(${1:param})');
+item.range = new vscode.Range(position, position); // Control replacement range
+
+// Add additional edits
+item.additionalTextEdits = [
+  vscode.TextEdit.insert(new vscode.Position(0, 0), 'import { myItem } from "lib";\n')
+];
+
+// Configure commit characters
+item.commitCharacters = ['.', ',', '('];
+```
+
+### Multiple Providers
+
+```typescript
+// Register multiple providers for the same language
+const disposables = [
+  vscode.languages.registerCompletionItemProvider('typescript', keywordProvider),
+  vscode.languages.registerCompletionItemProvider('typescript', snippetProvider, '.'),
+  vscode.languages.registerHoverProvider('typescript', hoverProvider),
+  vscode.languages.registerDefinitionProvider('typescript', definitionProvider)
+];
+
+context.subscriptions.push(...disposables);
+```
+
+## Common Patterns
+
+### Context-Aware Completions
+
+```typescript
+provideCompletionItems(
+  document: vscode.TextDocument,
+  position: vscode.Position,
+  token: vscode.CancellationToken,
+  context: vscode.CompletionContext
+): vscode.ProviderResult<vscode.CompletionItem[]> {
+  // Check trigger
+  if (context.triggerCharacter === '.') {
+    return this.provideMemberCompletions(document, position);
+  }
+  
+  // Check context
+  const line = document.lineAt(position.line).text;
+  if (line.trim().startsWith('import')) {
+    return this.provideImportCompletions(document, position);
+  }
+  
+  return this.provideGeneralCompletions(document, position);
+}
+```
+
+<Warning>
+Avoid performing expensive computations in `provideCompletionItems`. Use `resolveCompletionItem` for lazy loading of detailed information.
+</Warning>
+
+## Related APIs
+
+- **Reference Provider** - Find all references to a symbol
+- **Document Symbol Provider** - Outline view and breadcrumbs
+- **Signature Help Provider** - Parameter hints
+- **Code Action Provider** - Quick fixes and refactorings
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card title="Language Extension Guide" icon="book" href="https://code.visualstudio.com/api/language-extensions/programmatic-language-features">
+    Official guide to language features
+  </Card>
+  <Card title="Sample Extension" icon="code" href="https://github.com/microsoft/vscode-extension-samples/tree/main/completions-sample">
+    Complete working example
+  </Card>
+</CardGroup>

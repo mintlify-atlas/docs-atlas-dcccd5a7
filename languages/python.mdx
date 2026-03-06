@@ -1,0 +1,457 @@
+---
+title: Python
+description: Python language support in Visual Studio Code
+---
+
+Visual Studio Code includes built-in syntax support for Python through the `python` extension. While basic language features are built-in, enhanced capabilities like IntelliSense, debugging, and linting require the official Python extension from the Marketplace.
+
+## Built-in Python Support
+
+The core `python` extension provides:
+
+- **Syntax Highlighting**: Powered by MagicPython grammar for accurate tokenization
+- **Language Configuration**: Auto-closing pairs, bracket matching, and indentation rules
+- **File Recognition**: Automatic detection of Python files
+
+<Note>
+  The built-in extension is bundled with VS Code and can be disabled but not uninstalled.
+</Note>
+
+## Supported File Types
+
+The Python extension recognizes these file extensions:
+
+- `.py` - Standard Python files
+- `.pyi` - Python stub files (type hints)
+- `.pyw` - Python GUI scripts (Windows)
+- `.rpy` - RenPy script files
+- `.pyt` - Python template files
+- `.cpy` - Cython files
+- `.gyp` - GYP build files
+- `.gypi` - GYP include files
+- `.ipy` - IPython files
+
+### Special File Recognition
+
+- `SConstruct` - SCons build files
+- `SConscript` - SCons script files
+- Files with shebang: `#!/usr/bin/env python` or `#!/usr/bin/python`
+
+## Language Configuration
+
+### Comment Syntax
+
+Python uses hash for line comments and triple quotes for block comments:
+
+```json
+{
+  "comments": {
+    "lineComment": "#",
+    "blockComment": ["\"\"\"», "\"\"\""]
+  }
+}
+```
+
+Example usage:
+
+```python
+# This is a line comment
+
+"""
+This is a block comment
+or docstring
+"""
+```
+
+### Bracket Matching
+
+The extension defines standard bracket pairs:
+
+```json
+{
+  "brackets": [
+    ["{", "}"],
+    ["[", "]"],
+    ["(", ")"]
+  ]
+}
+```
+
+### Auto-Closing Pairs
+
+Python supports extensive auto-closing for various string types:
+
+```json
+{
+  "autoClosingPairs": [
+    { "open": "{", "close": "}" },
+    { "open": "[", "close": "]" },
+    { "open": "(", "close": ")" },
+    { "open": "\"", "close": "\"", "notIn": ["string"] },
+    { "open": "'", "close": "'", "notIn": ["string", "comment"] },
+    { "open": "f\"", "close": "\"» },
+    { "open": "r\"", "close": "\"» },
+    { "open": "b\"", "close": "\"" }
+  ]
+}
+```
+
+Supported string prefixes:
+- `f""` - f-strings (formatted strings)
+- `r""` - raw strings
+- `b""` - byte strings
+- `u""` - unicode strings
+
+### Indentation Rules
+
+Python uses significant indentation. The extension automatically indents after control structures:
+
+```json
+{
+  "onEnterRules": [
+    {
+      "beforeText": "^\\s*(?:def|class|for|if|elif|else|while|try|with|finally|except|async).*?:\\s*$",
+      "action": { "indent": "indent" }
+    }
+  ]
+}
+```
+
+Example:
+
+```python
+def calculate(x, y):
+    # Cursor automatically indents here
+    return x + y
+
+if condition:
+    # Auto-indent after colon
+    do_something()
+```
+
+## Default Editor Configuration
+
+The built-in extension sets Python-specific defaults:
+
+```json
+{
+  "configurationDefaults": {
+    "[python]": {
+      "diffEditor.ignoreTrimWhitespace": false,
+      "editor.defaultColorDecorators": "never"
+    }
+  }
+}
+```
+
+### Recommended Settings
+
+For optimal Python development:
+
+```json
+{
+  "[python]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.rulers": [79, 120],
+    "editor.formatOnSave": true
+  }
+}
+```
+
+<Tip>
+  PEP 8, the Python style guide, recommends 4 spaces for indentation and a maximum line length of 79 characters.
+</Tip>
+
+## Syntax Highlighting with MagicPython
+
+The extension uses the MagicPython grammar for superior syntax highlighting:
+
+```python
+# Function definitions
+def calculate_total(items: list[dict]) -> float:
+    """Calculate the total price of items."""
+    return sum(item['price'] for item in items)
+
+# Type hints are properly highlighted
+from typing import Optional, Union
+
+def process_data(data: Optional[str] = None) -> Union[int, float]:
+    pass
+
+# F-strings with expressions
+name = "World"
+greeting = f"Hello, {name.upper()}!"
+
+# Decorators
+@property
+@staticmethod
+def my_property(self):
+    return self._value
+```
+
+## Enhanced Features with Python Extension
+
+For full-featured Python development, install the official Python extension which adds:
+
+<Steps>
+  <Step title="IntelliSense">
+    Auto-completion, signature help, and quick info powered by Pylance or Jedi
+  </Step>
+  
+  <Step title="Linting">
+    Code analysis with Pylint, Flake8, mypy, and other linters
+  </Step>
+  
+  <Step title="Debugging">
+    Full debugging support with breakpoints, call stacks, and variable inspection
+  </Step>
+  
+  <Step title="Testing">
+    Integrated test discovery and execution for pytest and unittest
+  </Step>
+</Steps>
+
+## Debugging Setup
+
+While the built-in extension provides syntax support, debugging requires the Python extension. Here's a typical debug configuration:
+
+```json
+// .vscode/launch.json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Current File",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "Python: Module",
+      "type": "python",
+      "request": "launch",
+      "module": "myapp.main",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Python: Django",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": ["runserver"],
+      "django": true
+    },
+    {
+      "name": "Python: Flask",
+      "type": "python",
+      "request": "launch",
+      "module": "flask",
+      "env": {
+        "FLASK_APP": "app.py",
+        "FLASK_DEBUG": "1"
+      },
+      "args": ["run", "--no-debugger", "--no-reload"]
+    }
+  ]
+}
+```
+
+### Debug Configuration Options
+
+<CodeGroup>
+
+```json Python Script
+{
+  "name": "Python: Current File",
+  "type": "python",
+  "request": "launch",
+  "program": "${file}",
+  "console": "integratedTerminal"
+}
+```
+
+```json Remote Debugging
+{
+  "name": "Python: Attach",
+  "type": "python",
+  "request": "attach",
+  "connect": {
+    "host": "localhost",
+    "port": 5678
+  }
+}
+```
+
+```json With Arguments
+{
+  "name": "Python: With Args",
+  "type": "python",
+  "request": "launch",
+  "program": "${file}",
+  "args": ["--verbose", "--config=dev.ini"]
+}
+```
+
+</CodeGroup>
+
+## Code Folding
+
+Python supports region-based code folding:
+
+```python
+# region Setup
+import os
+import sys
+from pathlib import Path
+# endregion
+
+# region Helper Functions
+def helper_one():
+    pass
+
+def helper_two():
+    pass
+# endregion
+```
+
+Configuration:
+
+```json
+{
+  "folding": {
+    "offSide": true,
+    "markers": {
+      "start": "^\\s*#\\s*region\\b",
+      "end": "^\\s*#\\s*endregion\\b"
+    }
+  }
+}
+```
+
+<Note>
+  Python uses "offSide" folding, which means indentation-based blocks (like function bodies and class definitions) are automatically foldable.
+</Note>
+
+## Recommended Extensions
+
+Enhance your Python development experience:
+
+<Card title="Python" icon="python">
+  Official Python extension with IntelliSense, linting, debugging, and Jupyter support
+</Card>
+
+<Card title="Pylance" icon="rocket">
+  Fast, feature-rich language server for Python (recommended over Jedi)
+</Card>
+
+<Card title="Jupyter" icon="book">
+  Jupyter notebook support directly in VS Code
+</Card>
+
+<Card title="Python Test Explorer" icon="flask">
+  Visual test explorer for pytest and unittest
+</Card>
+
+<Card title="Python Docstring Generator" icon="file-text">
+  Automatically generate docstrings for functions and classes
+</Card>
+
+## Virtual Environment Support
+
+Python projects typically use virtual environments. The Python extension automatically detects:
+
+- `venv/` - Standard virtual environments
+- `.venv/` - Hidden virtual environments
+- `conda` - Anaconda environments
+- `poetry` - Poetry environments
+- `pipenv` - Pipenv environments
+
+Select interpreter via Command Palette: **Python: Select Interpreter**
+
+## Common Patterns
+
+### Type Hints
+
+```python
+from typing import List, Dict, Optional, Callable
+
+def process_items(
+    items: List[Dict[str, str]],
+    callback: Optional[Callable[[str], None]] = None
+) -> int:
+    """Process a list of items and return count."""
+    count = 0
+    for item in items:
+        if callback:
+            callback(item['name'])
+        count += 1
+    return count
+```
+
+### Dataclasses
+
+```python
+from dataclasses import dataclass, field
+from typing import List
+
+@dataclass
+class User:
+    name: str
+    email: str
+    age: int = 0
+    roles: List[str] = field(default_factory=list)
+    
+    def is_admin(self) -> bool:
+        return 'admin' in self.roles
+```
+
+### Context Managers
+
+```python
+from contextlib import contextmanager
+
+@contextmanager
+def database_connection(url: str):
+    conn = create_connection(url)
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+with database_connection('postgresql://localhost') as conn:
+    # Connection automatically closed after this block
+    conn.execute('SELECT * FROM users')
+```
+
+## Performance Tips
+
+For large Python projects:
+
+```json
+{
+  "python.analysis.indexing": true,
+  "python.analysis.memory.keepLibraryAst": false,
+  "python.analysis.packageIndexDepths": [
+    { "name": "django", "depth": 2 }
+  ]
+}
+```
+
+## Grammar Updates
+
+The MagicPython grammar is periodically updated:
+
+```json
+{
+  "scripts": {
+    "update-grammar": "node ../node_modules/vscode-grammar-updater/bin MagicStack/MagicPython"
+  }
+}
+```
+
+<Tip>
+  The built-in Python extension serves as a foundation. For professional Python development, always install the official Python extension from Microsoft.
+</Tip>

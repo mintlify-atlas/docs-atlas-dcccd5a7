@@ -1,0 +1,619 @@
+---
+title: 'Task Provider'
+description: 'Create and execute custom tasks in VS Code for build automation and workflows'
+---
+
+# Task Provider
+
+Task providers allow you to create custom build tasks, test runners, and automation workflows that integrate seamlessly with VS Code's task system. Users can run your tasks from the command palette, configure them in tasks.json, or bind them to keyboard shortcuts.
+
+## Overview
+
+Tasks in VS Code represent background processes or scripts that can be executed, monitored, and managed by the editor. Task providers dynamically contribute tasks to the system.
+
+### When to Use Task Providers
+
+- Custom build systems and compilers
+- Test runners and automation
+- Code generation and scaffolding
+- Deployment and CI/CD workflows
+- Custom linting and validation
+
+## Task Provider Interface
+
+The `TaskProvider` interface defines how tasks are discovered and resolved:
+
+```typescript
+interface TaskProvider<T extends Task = Task> {
+  // Provide all available tasks
+  provideTasks(token: CancellationToken): ProviderResult<T[]>;
+  
+  // Resolve tasks from tasks.json
+  resolveTask(task: T, token: CancellationToken): ProviderResult<T>;
+}
+```
+
+## Basic Implementation
+
+<Steps>
+  <Step title="Define task type">
+    Create a task definition in package.json:
+
+    ```json
+    {
+      "contributes": {
+        "taskDefinitions": [
+          {
+            "type": "myBuild",
+            "required": ["target"],
+            "properties": {
+              "target": {
+                "type": "string",
+                "description": "The build target (development, production)"
+              },
+              "optimize": {
+                "type": "boolean",
+                "description": "Enable optimization"
+              }
+            }
+          }
+        ]
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Create the provider">
+    Implement the `TaskProvider` interface:
+
+    ```typescript
+    import * as vscode from 'vscode';
+
+    interface MyTaskDefinition extends vscode.TaskDefinition {
+      target: string;
+      optimize?: boolean;
+    }
+
+    class MyBuildTaskProvider implements vscode.TaskProvider {
+      static readonly Type = 'myBuild';
+
+      provideTasks(token: vscode.CancellationToken): vscode.Task[] {
+        const tasks: vscode.Task[] = [];
+
+        // Create tasks for different targets
+        const targets = ['development', 'production'];
+        for (const target of targets) {
+          const definition: MyTaskDefinition = {
+            type: MyBuildTaskProvider.Type,
+            target
+          };
+
+          // Create shell execution
+          const execution = new vscode.ShellExecution(
+            `npm run build:${target}`
+          );
+
+          // Create the task
+          const task = new vscode.Task(
+            definition,
+            vscode.TaskScope.Workspace,
+            `Build ${target}`,
+            MyBuildTaskProvider.Type,
+            execution,
+            ['$eslint-stylish'] // Problem matcher
+          );
+
+          // Set task properties
+          task.group = vscode.TaskGroup.Build;
+          task.presentationOptions = {
+            reveal: vscode.TaskRevealKind.Always,
+            panel: vscode.TaskPanelKind.Dedicated
+          };
+
+          tasks.push(task);
+        }
+
+        return tasks;
+      }
+
+      resolveTask(task: vscode.Task, token: vscode.CancellationToken): vscode.Task | undefined {
+        const definition = task.definition as MyTaskDefinition;
+        
+        if (definition.target) {
+          // Create execution for this task
+          const execution = new vscode.ShellExecution(
+            `npm run build:${definition.target}`
+          );
+          
+          return new vscode.Task(
+            definition,
+            vscode.TaskScope.Workspace,
+            task.name,
+            MyBuildTaskProvider.Type,
+            execution,
+            ['$eslint-stylish']
+          );
+        }
+        
+        return undefined;
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Register the provider">
+    Register your task provider in the extension's activate function:
+
+    ```typescript
+    export function activate(context: vscode.ExtensionContext) {
+      const provider = new MyBuildTaskProvider();
+      
+      const disposable = vscode.tasks.registerTaskProvider(
+        MyBuildTaskProvider.Type,
+        provider
+      );
+      
+      context.subscriptions.push(disposable);
+    }
+    ```
+  </Step>
+</Steps>
+
+## Task Execution Types
+
+VS Code supports three types of task executions:
+
+### Shell Execution
+
+Run commands in a shell:
+
+```typescript
+// Simple command
+const execution = new vscode.ShellExecution('npm run build');
+
+// With arguments
+const execution = new vscode.ShellExecution('npm', ['run', 'build', '--production']);
+
+// With options
+const execution = new vscode.ShellExecution(
+  'npm',
+  ['run', 'build'],
+  {
+    cwd: '/path/to/project',
+    env: { NODE_ENV: 'production' }
+  }
+);
+```
+
+### Process Execution
+
+Run a process directly without shell:
+
+```typescript
+const execution = new vscode.ProcessExecution(
+  'node',
+  ['build.js', '--mode', 'production'],
+  {
+    cwd: workspaceFolder.uri.fsPath,
+    env: {
+      NODE_ENV: 'production',
+      PATH: process.env.PATH
+    }
+  }
+);
+```
+
+### Custom Execution
+
+Implement custom execution logic with full control:
+
+```typescript
+class MyCustomExecution implements vscode.CustomExecution {
+  constructor(private config: MyTaskDefinition) {}
+
+  async execute(
+    taskDefinition: vscode.TaskDefinition,
+    terminalDimensions: vscode.TerminalDimensions | undefined,
+    token: vscode.CancellationToken
+  ): Promise<number> {
+    // Return a Pseudoterminal
+    return new MyPseudoterminal(this.config);
+  }
+}
+
+class MyPseudoterminal implements vscode.Pseudoterminal {
+  private writeEmitter = new vscode.EventEmitter<string>();
+  onDidWrite = this.writeEmitter.event;
+  
+  private closeEmitter = new vscode.EventEmitter<number>();
+  onDidClose = this.closeEmitter.event;
+
+  constructor(private config: MyTaskDefinition) {}
+
+  open(initialDimensions: vscode.TerminalDimensions | undefined): void {
+    this.writeEmitter.fire('Starting custom task...\r\n');
+    this.runTask();
+  }
+
+  close(): void {
+    // Cleanup
+  }
+
+  private async runTask(): Promise<void> {
+    try {
+      // Do custom work
+      this.writeEmitter.fire('Processing...\r\n');
+      await this.processFiles();
+      
+      this.writeEmitter.fire('Task completed successfully!\r\n');
+      this.closeEmitter.fire(0); // Exit code 0 = success
+    } catch (error) {
+      this.writeEmitter.fire(`Error: ${error}\r\n`);
+      this.closeEmitter.fire(1); // Exit code 1 = error
+    }
+  }
+
+  private async processFiles(): Promise<void> {
+    // Custom processing logic
+  }
+}
+
+// Use custom execution
+const execution = new vscode.CustomExecution(
+  async () => new MyCustomExecution(definition)
+);
+```
+
+## Task Configuration
+
+### Task Groups
+
+Organize tasks into predefined groups:
+
+```typescript
+const buildTask = new vscode.Task(/* ... */);
+buildTask.group = vscode.TaskGroup.Build;
+
+const testTask = new vscode.Task(/* ... */);
+testTask.group = vscode.TaskGroup.Test;
+
+const cleanTask = new vscode.Task(/* ... */);
+cleanTask.group = vscode.TaskGroup.Clean;
+
+// Make it the default task for its group
+buildTask.group = { kind: vscode.TaskGroup.Build, isDefault: true };
+```
+
+### Presentation Options
+
+Control how the task output is displayed:
+
+```typescript
+const task = new vscode.Task(/* ... */);
+
+task.presentationOptions = {
+  // When to reveal the terminal
+  reveal: vscode.TaskRevealKind.Always, // Always, Never, Silent
+  
+  // Terminal reuse
+  panel: vscode.TaskPanelKind.Dedicated, // Shared, Dedicated, New
+  
+  // Focus behavior
+  focus: true, // Focus terminal on task start
+  
+  // Terminal visibility
+  echo: true, // Echo the command in terminal
+  
+  // Show task in task list
+  showReuseMessage: false,
+  
+  // Clear terminal before running
+  clear: true
+};
+```
+
+### Problem Matchers
+
+Parse task output to create problems in the Problems panel:
+
+```typescript
+const task = new vscode.Task(
+  definition,
+  scope,
+  name,
+  source,
+  execution,
+  ['$tsc', '$eslint-stylish'] // Built-in problem matchers
+);
+```
+
+#### Custom Problem Matcher
+
+Define in package.json:
+
+```json
+{
+  "contributes": {
+    "problemMatchers": [
+      {
+        "name": "myCompiler",
+        "owner": "myExtension",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "pattern": {
+          "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        }
+      }
+    ]
+  }
+}
+```
+
+## Monitoring Tasks
+
+Listen to task events:
+
+```typescript
+export function activate(context: vscode.ExtensionContext) {
+  // Task started
+  context.subscriptions.push(
+    vscode.tasks.onDidStartTask(event => {
+      const task = event.execution.task;
+      vscode.window.showInformationMessage(`Task started: ${task.name}`);
+    })
+  );
+
+  // Task ended
+  context.subscriptions.push(
+    vscode.tasks.onDidEndTask(event => {
+      const task = event.execution.task;
+      vscode.window.showInformationMessage(`Task ended: ${task.name}`);
+    })
+  );
+
+  // Process started
+  context.subscriptions.push(
+    vscode.tasks.onDidStartTaskProcess(event => {
+      console.log(`Process ${event.processId} started`);
+    })
+  );
+
+  // Process ended
+  context.subscriptions.push(
+    vscode.tasks.onDidEndTaskProcess(event => {
+      const exitCode = event.exitCode;
+      if (exitCode !== 0) {
+        vscode.window.showErrorMessage(`Task failed with code ${exitCode}`);
+      }
+    })
+  );
+}
+```
+
+## Complete Example: Test Runner
+
+Here's a complete example of a test runner task provider:
+
+```typescript
+import * as vscode from 'vscode';
+import * as path from 'path';
+
+interface TestTaskDefinition extends vscode.TaskDefinition {
+  file?: string;
+  testName?: string;
+  coverage?: boolean;
+}
+
+class TestTaskProvider implements vscode.TaskProvider {
+  static readonly Type = 'mytest';
+
+  provideTasks(token: vscode.CancellationToken): vscode.Task[] {
+    const tasks: vscode.Task[] = [];
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    
+    if (!workspaceFolder) {
+      return tasks;
+    }
+
+    // Task: Run all tests
+    tasks.push(this.createTask(
+      { type: TestTaskProvider.Type },
+      'Run All Tests',
+      'npm test',
+      workspaceFolder
+    ));
+
+    // Task: Run with coverage
+    tasks.push(this.createTask(
+      { type: TestTaskProvider.Type, coverage: true },
+      'Run Tests with Coverage',
+      'npm run test:coverage',
+      workspaceFolder
+    ));
+
+    // Task: Watch mode
+    tasks.push(this.createTask(
+      { type: TestTaskProvider.Type },
+      'Watch Tests',
+      'npm run test:watch',
+      workspaceFolder,
+      true // isBackground
+    ));
+
+    return tasks;
+  }
+
+  resolveTask(task: vscode.Task, token: vscode.CancellationToken): vscode.Task | undefined {
+    const definition = task.definition as TestTaskDefinition;
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    
+    if (!workspaceFolder) {
+      return undefined;
+    }
+
+    let command = 'npm test';
+    
+    if (definition.file) {
+      command = `npm test -- ${definition.file}`;
+    }
+    
+    if (definition.testName) {
+      command += ` -t "${definition.testName}"`;
+    }
+    
+    if (definition.coverage) {
+      command = 'npm run test:coverage';
+    }
+
+    return this.createTask(definition, task.name, command, workspaceFolder);
+  }
+
+  private createTask(
+    definition: TestTaskDefinition,
+    name: string,
+    command: string,
+    workspaceFolder: vscode.WorkspaceFolder,
+    isBackground = false
+  ): vscode.Task {
+    const execution = new vscode.ShellExecution(command, {
+      cwd: workspaceFolder.uri.fsPath
+    });
+
+    const task = new vscode.Task(
+      definition,
+      workspaceFolder,
+      name,
+      TestTaskProvider.Type,
+      execution,
+      '$jest-test' // Problem matcher for Jest
+    );
+
+    task.group = vscode.TaskGroup.Test;
+    task.presentationOptions = {
+      reveal: vscode.TaskRevealKind.Always,
+      panel: vscode.TaskPanelKind.Dedicated,
+      clear: true
+    };
+
+    if (isBackground) {
+      task.isBackground = true;
+      task.problemMatchers = [{
+        owner: 'mytest',
+        pattern: {
+          regexp: '^$'
+        },
+        background: {
+          activeOnStart: true,
+          beginsPattern: 'Test run started',
+          endsPattern: 'Test run completed'
+        }
+      }];
+    }
+
+    return task;
+  }
+}
+
+export function activate(context: vscode.ExtensionContext) {
+  const provider = new TestTaskProvider();
+  context.subscriptions.push(
+    vscode.tasks.registerTaskProvider(TestTaskProvider.Type, provider)
+  );
+
+  // Command to run test for current file
+  context.subscriptions.push(
+    vscode.commands.registerCommand('myExtension.runTestFile', async () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        return;
+      }
+
+      const fileName = path.basename(editor.document.fileName);
+      const definition: TestTaskDefinition = {
+        type: TestTaskProvider.Type,
+        file: fileName
+      };
+
+      const task = new vscode.Task(
+        definition,
+        vscode.TaskScope.Workspace,
+        `Test ${fileName}`,
+        TestTaskProvider.Type,
+        new vscode.ShellExecution(`npm test -- ${fileName}`)
+      );
+
+      await vscode.tasks.executeTask(task);
+    })
+  );
+}
+```
+
+## Best Practices
+
+### Error Handling
+
+```typescript
+provideTasks(token: vscode.CancellationToken): vscode.Task[] {
+  try {
+    // Check if required tools are available
+    if (!this.isToolInstalled()) {
+      vscode.window.showWarningMessage(
+        'Build tool not found. Please install it first.'
+      );
+      return [];
+    }
+
+    // Check cancellation
+    if (token.isCancellationRequested) {
+      return [];
+    }
+
+    return this.discoverTasks();
+  } catch (error) {
+    vscode.window.showErrorMessage(
+      `Failed to provide tasks: ${error}`
+    );
+    return [];
+  }
+}
+```
+
+### Task Caching
+
+```typescript
+class CachedTaskProvider implements vscode.TaskProvider {
+  private taskCache: vscode.Task[] | undefined;
+
+  provideTasks(token: vscode.CancellationToken): vscode.Task[] {
+    if (this.taskCache) {
+      return this.taskCache;
+    }
+
+    this.taskCache = this.discoverTasks();
+    
+    // Clear cache on configuration change
+    vscode.workspace.onDidChangeConfiguration(e => {
+      if (e.affectsConfiguration('myExtension')) {
+        this.taskCache = undefined;
+      }
+    });
+
+    return this.taskCache;
+  }
+}
+```
+
+## Resources
+
+<CardGroup cols={2}>
+  <Card title="Task Provider Guide" icon="list-check" href="https://code.visualstudio.com/api/extension-guides/task-provider">
+    Complete task provider documentation
+  </Card>
+  <Card title="Task Sample" icon="code" href="https://github.com/microsoft/vscode-extension-samples/tree/main/task-provider-sample">
+    Working example code
+  </Card>
+</CardGroup>

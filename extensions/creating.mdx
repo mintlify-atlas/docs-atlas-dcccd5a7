@@ -1,0 +1,482 @@
+---
+title: Creating Extensions
+description: Build your first VS Code extension with this step-by-step guide
+---
+
+## Prerequisites
+
+Before creating extensions, ensure you have:
+
+- [Node.js](https://nodejs.org/) (version 18 or higher)
+- [Visual Studio Code](https://code.visualstudio.com/)
+- Basic knowledge of TypeScript or JavaScript
+- Git (for version control)
+
+## Development Environment Setup
+
+<Steps>
+  <Step title="Install Yeoman and Generator">
+    Yeoman and the VS Code Extension Generator scaffold new extensions:
+    
+    ```bash
+    npm install -g yo generator-code
+    ```
+  </Step>
+  
+  <Step title="Generate Extension">
+    Run the generator and answer the prompts:
+    
+    ```bash
+    yo code
+    ```
+    
+    Choose:
+    - **New Extension (TypeScript)** - Recommended for most extensions
+    - **New Extension (JavaScript)** - If you prefer JavaScript
+    - **New Color Theme** - For color themes
+    - **New Language Support** - For language syntax highlighting
+    - **New Code Snippets** - For snippet collections
+  </Step>
+  
+  <Step title="Open in VS Code">
+    Navigate to your extension folder and open it:
+    
+    ```bash
+    cd my-extension
+    code .
+    ```
+  </Step>
+</Steps>
+
+## Extension Structure
+
+A typical TypeScript-based extension has this structure (based on VS Code's built-in extensions):
+
+```
+my-extension/
+├── .vscode/
+│   ├── launch.json          # Debug configuration
+│   └── tasks.json           # Build tasks
+├── src/
+│   └── extension.ts         # Extension entry point
+├── out/                     # Compiled output (development)
+├── dist/                    # Bundled output (production)
+├── package.json             # Extension manifest
+├── tsconfig.json            # TypeScript configuration
+├── esbuild.mts              # Build script
+└── .vscodeignore           # Files to exclude from package
+```
+
+### Key Files
+
+**package.json** - Extension manifest defining metadata, activation events, and contributions
+
+**src/extension.ts** - Main entry point with `activate()` and `deactivate()` functions
+
+**tsconfig.json** - TypeScript compiler configuration
+
+**esbuild.mts** - Production build script (used by VS Code's built-in extensions)
+
+<Note>
+VS Code's built-in extensions use esbuild for fast, efficient bundling. Consider using the same approach for your extensions.
+</Note>
+
+## Hello World Extension
+
+Let's create a simple extension that displays a message:
+
+<Steps>
+  <Step title="Update package.json">
+    Define your extension's metadata and contributions:
+    
+    ```json package.json
+    {
+      "name": "hello-world",
+      "displayName": "Hello World",
+      "description": "My first extension",
+      "version": "0.0.1",
+      "engines": {
+        "vscode": "^1.70.0"
+      },
+      "categories": [
+        "Other"
+      ],
+      "activationEvents": [
+        "onCommand:hello-world.helloWorld"
+      ],
+      "main": "./out/extension.js",
+      "contributes": {
+        "commands": [
+          {
+            "command": "hello-world.helloWorld",
+            "title": "Hello World"
+          }
+        ]
+      },
+      "scripts": {
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./"
+      },
+      "devDependencies": {
+        "@types/node": "^18.x",
+        "@types/vscode": "^1.70.0",
+        "typescript": "^5.0.0"
+      }
+    }
+    ```
+  </Step>
+  
+  <Step title="Implement Extension Logic">
+    Create the extension entry point:
+    
+    ```typescript src/extension.ts
+    import * as vscode from 'vscode';
+    
+    export function activate(context: vscode.ExtensionContext) {
+      console.log('Extension "hello-world" is now active');
+      
+      // Register the command
+      let disposable = vscode.commands.registerCommand(
+        'hello-world.helloWorld',
+        () => {
+          vscode.window.showInformationMessage(
+            'Hello World from my extension!'
+          );
+        }
+      );
+      
+      // Add to subscriptions for cleanup
+      context.subscriptions.push(disposable);
+    }
+    
+    export function deactivate() {
+      console.log('Extension "hello-world" is now deactivated');
+    }
+    ```
+  </Step>
+  
+  <Step title="Compile TypeScript">
+    Compile your TypeScript code:
+    
+    ```bash
+    npm run compile
+    ```
+    
+    Or use watch mode for automatic compilation:
+    
+    ```bash
+    npm run watch
+    ```
+  </Step>
+  
+  <Step title="Test the Extension">
+    Press `F5` to launch the Extension Development Host:
+    
+    - A new VS Code window opens with your extension loaded
+    - Open Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)
+    - Type "Hello World" and run the command
+    - See the information message appear
+  </Step>
+</Steps>
+
+## Understanding Extension Components
+
+### Activation Events
+
+Activation events determine when your extension loads. Common patterns from VS Code's built-in extensions:
+
+```json
+{
+  "activationEvents": [
+    "onLanguage:typescript",     // When TypeScript file opens
+    "onCommand:myext.command",   // When command is invoked
+    "onView:myext.explorer",     // When view is shown
+    "workspaceContains:**/*.json", // When workspace has JSON files
+    "onStartupFinished"          // After startup completes
+  ]
+}
+```
+
+<Warning>
+Avoid using `"*"` as an activation event. It loads your extension immediately, slowing down VS Code startup. Use specific events instead.
+</Warning>
+
+### Contribution Points
+
+Contributions are declarative enhancements to VS Code. Examples from built-in extensions:
+
+<CodeGroup>
+```json Commands
+{
+  "contributes": {
+    "commands": [
+      {
+        "command": "git.clone",
+        "title": "Clone",
+        "category": "Git",
+        "icon": "$(repo-clone)"
+      }
+    ]
+  }
+}
+```
+
+```json Configuration
+{
+  "contributes": {
+    "configuration": {
+      "title": "TypeScript",
+      "properties": {
+        "typescript.format.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable/disable TypeScript formatting"
+        }
+      }
+    }
+  }
+}
+```
+
+```json Languages
+{
+  "contributes": {
+    "languages": [
+      {
+        "id": "typescript",
+        "extensions": [".ts"],
+        "aliases": ["TypeScript", "ts"],
+        "configuration": "./language-configuration.json"
+      }
+    ]
+  }
+}
+```
+
+```json Keybindings
+{
+  "contributes": {
+    "keybindings": [
+      {
+        "command": "git.commit",
+        "key": "ctrl+shift+g c",
+        "mac": "cmd+shift+g c",
+        "when": "gitOpenRepositoryCount != 0"
+      }
+    ]
+  }
+}
+```
+</CodeGroup>
+
+### Extension Context
+
+The `ExtensionContext` provides utilities and paths:
+
+```typescript
+export function activate(context: vscode.ExtensionContext) {
+  // Extension's absolute file path
+  console.log(context.extensionPath);
+  
+  // Global storage path
+  console.log(context.globalStorageUri);
+  
+  // Workspace storage path  
+  console.log(context.storageUri);
+  
+  // Store data globally
+  context.globalState.update('key', 'value');
+  
+  // Store data per workspace
+  context.workspaceState.update('key', 'value');
+  
+  // Manage disposables
+  context.subscriptions.push(disposable);
+}
+```
+
+## Working with the VS Code API
+
+### Showing Messages
+
+```typescript
+// Information message
+vscode.window.showInformationMessage('Operation completed');
+
+// Warning message
+vscode.window.showWarningMessage('Are you sure?', 'Yes', 'No')
+  .then(selection => {
+    if (selection === 'Yes') {
+      // User clicked Yes
+    }
+  });
+
+// Error message
+vscode.window.showErrorMessage('Operation failed!');
+```
+
+### Getting User Input
+
+```typescript
+// Simple text input
+const name = await vscode.window.showInputBox({
+  prompt: 'Enter your name',
+  placeHolder: 'John Doe'
+});
+
+// Quick pick selection (from Git extension)
+const items = ['Option 1', 'Option 2', 'Option 3'];
+const selected = await vscode.window.showQuickPick(items, {
+  placeHolder: 'Select an option'
+});
+```
+
+### Working with Documents
+
+```typescript
+// Get active editor
+const editor = vscode.window.activeTextEditor;
+if (editor) {
+  const document = editor.document;
+  const selection = editor.selection;
+  const text = document.getText(selection);
+  
+  // Modify document
+  editor.edit(editBuilder => {
+    editBuilder.replace(selection, text.toUpperCase());
+  });
+}
+
+// Listen for document changes
+vscode.workspace.onDidChangeTextDocument(event => {
+  console.log('Document changed:', event.document.uri);
+});
+```
+
+### Registering Language Features
+
+Example from TypeScript extension:
+
+```typescript
+// Register completion provider
+vscode.languages.registerCompletionItemProvider(
+  'typescript',
+  {
+    provideCompletionItems(document, position) {
+      const items = [];
+      // Build completion items
+      return items;
+    }
+  },
+  '.' // Trigger characters
+);
+
+// Register hover provider
+vscode.languages.registerHoverProvider('typescript', {
+  provideHover(document, position) {
+    const range = document.getWordRangeAtPosition(position);
+    const word = document.getText(range);
+    return new vscode.Hover(`Hover info for ${word}`);
+  }
+});
+```
+
+## Browser Support
+
+To support VS Code for the Web (vscode.dev), follow the pattern from built-in extensions:
+
+<Steps>
+  <Step title="Add Browser Entry Point">
+    Update package.json:
+    
+    ```json
+    {
+      "main": "./out/extension.js",
+      "browser": "./dist/browser/extension.js"
+    }
+    ```
+  </Step>
+  
+  <Step title="Create Browser Config">
+    Add tsconfig.browser.json:
+    
+    ```json tsconfig.browser.json
+    {
+      "extends": "./tsconfig.json",
+      "compilerOptions": {
+        "lib": ["ES2020", "WebWorker"]
+      },
+      "include": ["src/extension.browser.ts"]
+    }
+    ```
+  </Step>
+  
+  <Step title="Add Build Script">
+    Create esbuild.browser.mts for bundling (based on VS Code's pattern):
+    
+    ```typescript esbuild.browser.mts
+    import * as esbuild from 'esbuild';
+    
+    await esbuild.build({
+      entryPoints: ['src/extension.browser.ts'],
+      bundle: true,
+      outfile: 'dist/browser/extension.js',
+      external: ['vscode'],
+      format: 'cjs',
+      platform: 'browser'
+    });
+    ```
+  </Step>
+</Steps>
+
+<Note>
+Browser extensions cannot use Node.js APIs. Use browser-compatible alternatives or feature detection.
+</Note>
+
+## Debugging Extensions
+
+### Launch Configuration
+
+The `.vscode/launch.json` file configures debugging:
+
+```json .vscode/launch.json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}"]
+    },
+    {
+      "name": "Extension Tests",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "--extensionTestsPath=${workspaceFolder}/out/test"
+      ]
+    }
+  ]
+}
+```
+
+### Debugging Tips
+
+- Set breakpoints in your TypeScript files
+- Use Debug Console to evaluate expressions
+- Check Developer Tools: Help → Toggle Developer Tools
+- View extension logs in the Output panel
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Publish Extension" href="./publishing">
+    Learn how to package and publish your extension
+  </Card>
+  
+  <Card title="API Reference" href="https://code.visualstudio.com/api/references/vscode-api">
+    Explore the complete VS Code API
+  </Card>
+</CardGroup>

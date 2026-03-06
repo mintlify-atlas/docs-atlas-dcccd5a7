@@ -1,0 +1,223 @@
+---
+title: Settings
+description: Configure VS Code with user and workspace settings
+---
+
+VS Code provides extensive customization through settings that control editor behavior, features, and appearance. Settings are stored in JSON format and can be applied at different scopes.
+
+## Understanding Settings Scopes
+
+VS Code supports multiple settings scopes, allowing you to configure different behaviors for different contexts:
+
+<Steps>
+  <Step title="User Settings">
+    Global settings that apply to all VS Code instances. Stored in your user profile directory.
+    
+    **Location:** `~/.config/Code/User/settings.json` (Linux/macOS) or `%APPDATA%\Code\User\settings.json` (Windows)
+  </Step>
+  
+  <Step title="Workspace Settings">
+    Settings specific to the current workspace or project. Stored in `.vscode/settings.json` within your project.
+    
+    These override user settings and are ideal for project-specific configurations.
+  </Step>
+</Steps>
+
+<Note>
+Workspace settings take precedence over user settings. This allows you to have different configurations for different projects.
+</Note>
+
+## Accessing Settings
+
+You can access and edit settings in multiple ways:
+
+### Using the Settings UI
+
+1. Open the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
+2. Type "Preferences: Open Settings (UI)"
+3. Browse or search for settings in the visual interface
+
+### Editing Settings JSON
+
+For direct JSON editing:
+
+1. Open the Command Palette
+2. Type "Preferences: Open Settings (JSON)" for user settings
+3. Or "Preferences: Open Workspace Settings (JSON)" for workspace settings
+
+## Common Settings Examples
+
+Here are real-world settings examples from the VS Code codebase:
+
+### Editor Configuration
+
+```json settings.json
+{
+  "editor.insertSpaces": false,
+  "editor.formatOnSave": true,
+  "editor.wordWrap": "on",
+  "editor.occurrencesHighlightDelay": 0,
+  "editor.defaultFormatter": "esbenp.prettier-vscode"
+}
+```
+
+### Language-Specific Settings
+
+You can configure settings for specific languages using the `[languageId]` syntax:
+
+```json settings.json
+{
+  "[typescript]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[javascript]": {
+    "editor.formatOnSave": true
+  },
+  "[rust]": {
+    "editor.defaultFormatter": "rust-lang.rust-analyzer",
+    "editor.formatOnSave": true
+  },
+  "[plaintext]": {
+    "files.insertFinalNewline": false
+  }
+}
+```
+
+### Files Configuration
+
+```json settings.json
+{
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/node_modules": true,
+    "**/*.js.map": true
+  },
+  "files.associations": {
+    "*.tst": "typescript",
+    "*.config": "json"
+  }
+}
+```
+
+### Search Configuration
+
+Control which files and folders are excluded from search:
+
+```json settings.json
+{
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/out": true,
+    "**/*.snap": true,
+    ".build/**": true
+  }
+}
+```
+
+### Git Configuration
+
+```json settings.json
+{
+  "git.ignoreLimitWarning": true,
+  "git.branchProtection": [
+    "main",
+    "release/*"
+  ],
+  "git.branchProtectionPrompt": "alwaysCommitToNewBranch",
+  "git.mergeEditor": true
+}
+```
+
+### TypeScript/JavaScript Configuration
+
+```json settings.json
+{
+  "js/ts.preferences.importModuleSpecifier": "relative",
+  "js/ts.preferences.quoteStyle": "single",
+  "js/ts.tsc.autoDetect": "off"
+}
+```
+
+## Workspace Settings Example
+
+For project-specific configuration, create `.vscode/settings.json` in your project:
+
+```json .vscode/settings.json
+{
+  "editor.insertSpaces": true,
+  "editor.tabSize": 2,
+  "files.trimTrailingWhitespace": true,
+  "[markdown]": {
+    "files.trimTrailingWhitespace": false
+  },
+  "search.exclude": {
+    "dist/**": true,
+    "build/**": true
+  }
+}
+```
+
+## Settings Schema
+
+VS Code validates your settings against a JSON schema. The editor provides:
+
+- IntelliSense for available settings
+- Descriptions and default values
+- Type validation
+- Enum value suggestions
+
+<Tip>
+Use `Ctrl+Space` in the settings JSON file to see available settings and their descriptions.
+</Tip>
+
+## Finding Setting IDs
+
+To find the JSON identifier for a setting:
+
+1. Open the Settings UI
+2. Find the setting you want
+3. Hover over the setting name to see its identifier
+4. Or use the gear icon next to the setting and select "Copy Setting ID"
+
+## Read-Only Files
+
+You can mark certain files as read-only to prevent accidental edits:
+
+```json settings.json
+{
+  "files.readonlyInclude": {
+    "**/node_modules/**/*.*": true,
+    "**/yarn.lock": true,
+    "**/package-lock.json": true,
+    "out/**": true
+  }
+}
+```
+
+<Warning>
+Be careful when modifying workspace settings in shared repositories. These settings affect all team members who work on the project.
+</Warning>
+
+## Settings Sync
+
+VS Code can synchronize your user settings across different machines:
+
+- Sign in with your Microsoft or GitHub account
+- Enable Settings Sync from the Command Palette
+- Choose which settings to sync (settings, keybindings, extensions, etc.)
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Keybindings" icon="keyboard" href="./keybindings">
+    Customize keyboard shortcuts
+  </Card>
+  <Card title="Themes" icon="palette" href="./themes">
+    Personalize colors and icons
+  </Card>
+</CardGroup>

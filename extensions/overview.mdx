@@ -1,0 +1,255 @@
+---
+title: Extensions Overview
+description: Learn about VS Code's extension system and how extensions enhance the editor's capabilities
+---
+
+## What are Extensions?
+
+Visual Studio Code extensions allow you to add functionality to the editor, including new languages, debuggers, themes, and tools. VS Code's extension architecture enables a rich ecosystem while keeping the core editor lightweight and fast.
+
+Extensions run in a separate process from the VS Code editor, ensuring that they cannot slow down or crash the main application.
+
+## Extension Capabilities
+
+Extensions can enhance VS Code in many ways:
+
+<CardGroup cols={2}>
+  <Card title="Language Support" icon="code">
+    Add syntax highlighting, IntelliSense, code completion, and language-specific features
+  </Card>
+  
+  <Card title="Themes" icon="palette">
+    Customize the editor's appearance with color themes and icon themes
+  </Card>
+  
+  <Card title="Debuggers" icon="bug">
+    Integrate debugging support for different languages and runtimes
+  </Card>
+  
+  <Card title="Source Control" icon="git-branch">
+    Add version control providers and enhance Git workflows
+  </Card>
+  
+  <Card title="Commands & UI" icon="terminal">
+    Register custom commands, menus, keybindings, and UI components
+  </Card>
+  
+  <Card title="Webviews" icon="window">
+    Create custom views using HTML, CSS, and JavaScript
+  </Card>
+</CardGroup>
+
+## Built-in Extensions
+
+VS Code ships with over 100 built-in extensions that provide core functionality. These extensions are located in the `extensions/` directory of the VS Code source code.
+
+### Language Extensions
+
+<CardGroup cols={2}>
+  <Card title="TypeScript/JavaScript">
+    The `typescript-language-features` extension provides IntelliSense, code navigation, refactoring, and formatting for TypeScript and JavaScript.
+  </Card>
+  
+  <Card title="Markdown">
+    The `markdown-language-features` extension offers preview, syntax highlighting, and validation for Markdown files.
+  </Card>
+  
+  <Card title="JSON">
+    The `json-language-features` extension provides schema validation, IntelliSense, and formatting for JSON files.
+  </Card>
+  
+  <Card title="HTML/CSS">
+    The `html-language-features` and `css-language-features` extensions support web development with completion and validation.
+  </Card>
+</CardGroup>
+
+### Tool Extensions
+
+**Git** - The `git` extension provides comprehensive source control integration:
+- View and stage changes
+- Commit and push/pull
+- Branch management
+- Merge conflict resolution
+- Git history and timeline
+
+**Emmet** - The `emmet` extension enables rapid HTML and CSS development:
+- Abbreviation expansion
+- Tag manipulation
+- Math expression evaluation
+- Custom snippets
+
+**Extension Editing** - The `extension-editing` extension helps develop VS Code extensions:
+- Package.json schema validation
+- Language configuration schemas
+- Theme schema validation
+
+## Extension Manifest
+
+Every extension must have a `package.json` file at its root. This manifest file describes the extension and defines its capabilities.
+
+<CodeGroup>
+```json package.json
+{
+  "name": "my-extension",
+  "displayName": "My Extension",
+  "description": "A sample extension",
+  "version": "1.0.0",
+  "publisher": "my-publisher",
+  "engines": {
+    "vscode": "^1.70.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onLanguage:typescript"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "myextension.helloWorld",
+        "title": "Hello World"
+      }
+    ]
+  }
+}
+```
+</CodeGroup>
+
+### Key Manifest Properties
+
+- **name** - Unique identifier for the extension (lowercase, no spaces)
+- **displayName** - Human-readable name shown in the marketplace
+- **version** - Extension version following semver
+- **engines.vscode** - Minimum VS Code version required
+- **categories** - Categories for marketplace classification
+- **activationEvents** - When the extension should be activated
+- **main** - Entry point file for the extension
+- **contributes** - Declarative contributions to VS Code
+
+## Extension Categories
+
+Extensions are organized into categories in the marketplace:
+
+- **Programming Languages** - Language support extensions
+- **Snippets** - Code snippet collections
+- **Linters** - Code quality and style checkers
+- **Debuggers** - Debugging support
+- **Formatters** - Code formatting tools
+- **Themes** - Color and icon themes
+- **Other** - General-purpose extensions
+
+## Extension Activation
+
+Extensions are lazy-loaded and activate only when needed. Activation events determine when an extension starts:
+
+<CodeGroup>
+```json Activation Examples
+{
+  "activationEvents": [
+    "onLanguage:python",
+    "onCommand:myextension.command",
+    "onView:myextension.explorer",
+    "workspaceContains:**/.eslintrc.json",
+    "onFileSystem:sftp",
+    "onStartupFinished"
+  ]
+}
+```
+</CodeGroup>
+
+<Note>
+Use specific activation events rather than `*` to ensure your extension only loads when necessary, improving startup performance.
+</Note>
+
+## Extension API
+
+Extensions interact with VS Code through the Extension API, defined in `vscode.d.ts`. This API provides:
+
+- **Commands** - Register and execute commands
+- **Window** - Interact with the editor window
+- **Workspace** - Access files and folders
+- **Languages** - Register language providers
+- **Debug** - Implement debugger support
+- **SCM** - Integrate source control
+- **Tasks** - Define and run tasks
+
+<CodeGroup>
+```typescript Extension Entry Point
+import * as vscode from 'vscode';
+
+export function activate(context: vscode.ExtensionContext) {
+  // Register a command
+  let disposable = vscode.commands.registerCommand(
+    'myextension.helloWorld',
+    () => {
+      vscode.window.showInformationMessage('Hello from my extension!');
+    }
+  );
+
+  context.subscriptions.push(disposable);
+}
+
+export function deactivate() {
+  // Cleanup when extension is deactivated
+}
+```
+</CodeGroup>
+
+## Web Extensions
+
+VS Code supports extensions that run in the browser (vscode.dev, github.dev). Web extensions have some differences:
+
+- Must use browser-compatible APIs only
+- Cannot use Node.js modules
+- Require a separate browser entrypoint
+- Must declare `"browser"` field in package.json
+
+<CodeGroup>
+```json Browser Support
+{
+  "main": "./out/extension.js",
+  "browser": "./dist/browser/extension.js",
+  "engines": {
+    "vscode": "^1.70.0"
+  }
+}
+```
+</CodeGroup>
+
+## Virtual Workspaces
+
+Extensions can declare support for virtual workspaces (remote or virtual file systems):
+
+<CodeGroup>
+```json Workspace Capabilities
+{
+  "capabilities": {
+    "virtualWorkspaces": {
+      "supported": "limited",
+      "description": "Some features may be limited in virtual workspaces"
+    },
+    "untrustedWorkspaces": {
+      "supported": false
+    }
+  }
+}
+```
+</CodeGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Browse Extensions" href="./marketplace">
+    Learn how to find and install extensions from the marketplace
+  </Card>
+  
+  <Card title="Create Extensions" href="./creating">
+    Build your first VS Code extension
+  </Card>
+  
+  <Card title="Publish Extensions" href="./publishing">
+    Share your extension with the world
+  </Card>
+</CardGroup>

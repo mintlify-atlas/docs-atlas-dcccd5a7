@@ -1,0 +1,684 @@
+---
+title: Extension Testing
+description: Complete guide to testing VS Code extensions
+---
+
+# Extension Testing
+
+Testing is crucial for building reliable VS Code extensions. This guide covers how to write, run, and debug tests for your extension.
+
+## Overview
+
+VS Code extensions can be tested using the official `@vscode/test-electron` package, which provides utilities to run tests inside a VS Code instance with full access to the Extension API.
+
+## Test Setup
+
+### Installation
+
+Install the required testing dependencies:
+
+```bash
+npm install --save-dev @vscode/test-electron mocha @types/mocha @types/node
+```
+
+### Project Structure
+
+```
+my-extension/
+├── src/
+│   ├── extension.ts
+│   └── test/
+│       ├── suite/
+│       │   ├── extension.test.ts
+│       │   └── integration.test.ts
+│       ├── runTest.ts
+│       └── index.ts
+├── package.json
+└── tsconfig.json
+```
+
+## Test Runner Configuration
+
+### runTest.ts
+
+This file downloads and launches VS Code with your extension loaded:
+
+```typescript
+import * as path from 'path';
+import { runTests } from '@vscode/test-electron';
+
+async function main() {
+  try {
+    // The folder containing the Extension Manifest package.json
+    const extensionDevelopmentPath = path.resolve(__dirname, '../../');
+
+    // The path to the extension test script
+    const extensionTestsPath = path.resolve(__dirname, './suite/index');
+
+    // Download VS Code, unzip it and run the integration test
+    await runTests({
+      extensionDevelopmentPath,
+      extensionTestsPath,
+      launchArgs: [
+        '--disable-extensions', // Disable other extensions
+        '--disable-gpu' // Disable GPU for CI environments
+      ]
+    });
+  } catch (err) {
+    console.error('Failed to run tests');
+    process.exit(1);
+  }
+}
+
+main();
+```
+
+<Accordion title="Advanced runTest.ts configuration">
+```typescript
+import * as path from 'path';
+import { runTests } from '@vscode/test-electron';
+
+async function main() {
+  try {
+    const extensionDevelopmentPath = path.resolve(__dirname, '../../');
+    const extensionTestsPath = path.resolve(__dirname, './suite/index');
+
+    // Test with specific VS Code version
+    await runTests({
+      version: '1.85.0', // Specific version
+      extensionDevelopmentPath,
+      extensionTestsPath,
+      launchArgs: [
+        '--disable-extensions',
+        '--disable-gpu',
+        // Open a workspace
+        path.resolve(__dirname, '../../test-fixtures/workspace')
+      ],
+      // Environment variables
+      extensionTestsEnv: {
+        NODE_ENV: 'test'
+      }
+    });
+  } catch (err) {
+    console.error('Failed to run tests');
+    process.exit(1);
+  }
+}
+
+main();
+```
+</Accordion>
+
+### Test Suite Index (index.ts)
+
+Configure Mocha and glob test files:
+
+```typescript
+import * as path from 'path';
+import * as Mocha from 'mocha';
+import * as glob from 'glob';
+
+export function run(): Promise<void> {
+  // Create the mocha test
+  const mocha = new Mocha({
+    ui: 'tdd',
+    color: true,
+    timeout: 10000
+  });
+
+  const testsRoot = path.resolve(__dirname, '..');
+
+  return new Promise((resolve, reject) => {
+    glob('**/**.test.js', { cwd: testsRoot }, (err, files) => {
+      if (err) {
+        return reject(err);
+      }
+
+      // Add files to the test suite
+      files.forEach(f => mocha.addFile(path.resolve(testsRoot, f)));
+
+      try {
+        // Run the mocha test
+        mocha.run(failures => {
+          if (failures > 0) {
+            reject(new Error(`${failures} tests failed.`));
+          } else {
+            resolve();
+          }
+        });
+      } catch (err) {
+        console.error(err);
+        reject(err);
+      }
+    });
+  });
+}
+```
+
+## Writing Tests
+
+### Basic Extension Test
+
+```typescript
+import * as assert from 'assert';
+import * as vscode from 'vscode';
+
+suite('Extension Test Suite', () => {
+  vscode.window.showInformationMessage('Start all tests.');
+
+  test('Extension should be present', () => {
+    const extension = vscode.extensions.getExtension('publisher.extension-id');
+    assert.ok(extension);
+  });
+
+  test('Extension should activate', async () => {
+    const extension = vscode.extensions.getExtension('publisher.extension-id');
+    await extension?.activate();
+    assert.strictEqual(extension?.isActive, true);
+  });
+
+  test('Commands should be registered', async () => {
+    const commands = await vscode.commands.getCommands();
+    assert.ok(commands.includes('myExtension.helloWorld'));
+  });
+});
+```
+
+### Testing Commands
+
+```typescript
+import * as assert from 'assert';
+import * as vscode from 'vscode';
+
+suite('Command Tests', () => {
+  test('Hello World command shows message', async () => {
+    // Execute the command
+    await vscode.commands.executeCommand('myExtension.helloWorld');
+    
+    // In a real test, you'd need to mock or verify the window.showInformationMessage call
+    // This is a simplified example
+  });
+
+  test('Command with return value', async () => {
+    const result = await vscode.commands.executeCommand(
+      'myExtension.getData',
+      { id: 123 }
+    );
+    
+    assert.strictEqual(result.status, 'success');
+    assert.ok(result.data);
+  });
+});
+```
+
+### Testing Document Operations
+
+```typescript
+import * as assert from 'assert';
+import * as vscode from 'vscode';
+import * as path from 'path';
+
+suite('Document Tests', () => {
+  test('Open and read document', async () => {
+    const doc = await vscode.workspace.openTextDocument({
+      language: 'javascript',
+      content: 'console.log("Hello");'
+    });
+
+    assert.strictEqual(doc.languageId, 'javascript');
+    assert.strictEqual(doc.lineCount, 1);
+    assert.ok(doc.getText().includes('console.log'));
+  });
+
+  test('Edit document', async () => {
+    const doc = await vscode.workspace.openTextDocument({
+      language: 'javascript',
+      content: 'const x = 1;'
+    });
+
+    const editor = await vscode.window.showTextDocument(doc);
+
+    await editor.edit(editBuilder => {
+      editBuilder.insert(new vscode.Position(0, 0), '// Comment\n');
+    });
+
+    assert.strictEqual(doc.lineCount, 2);
+    assert.ok(doc.getText().startsWith('// Comment'));
+  });
+
+  test('Open file from disk', async () => {
+    const testFilePath = path.resolve(__dirname, '../../../test-fixtures/sample.js');
+    const doc = await vscode.workspace.openTextDocument(testFilePath);
+
+    assert.ok(doc);
+    assert.strictEqual(doc.languageId, 'javascript');
+  });
+});
+```
+
+### Testing with Workspaces
+
+```typescript
+import * as assert from 'assert';
+import * as vscode from 'vscode';
+
+suite('Workspace Tests', () => {
+  test('Find files in workspace', async () => {
+    const files = await vscode.workspace.findFiles('**/*.js');
+    assert.ok(files.length > 0);
+  });
+
+  test('Read workspace configuration', () => {
+    const config = vscode.workspace.getConfiguration('myExtension');
+    const value = config.get('setting');
+    assert.ok(value !== undefined);
+  });
+
+  test('Workspace folders', () => {
+    const folders = vscode.workspace.workspaceFolders;
+    assert.ok(folders);
+    assert.ok(folders.length > 0);
+  });
+});
+```
+
+### Testing Language Features
+
+```typescript
+import * as assert from 'assert';
+import * as vscode from 'vscode';
+
+suite('Language Feature Tests', () => {
+  test('Completions are provided', async () => {
+    const doc = await vscode.workspace.openTextDocument({
+      language: 'javascript',
+      content: 'console.'
+    });
+
+    await vscode.window.showTextDocument(doc);
+    
+    const position = new vscode.Position(0, 8); // After the dot
+    const completions = await vscode.commands.executeCommand<vscode.CompletionList>(
+      'vscode.executeCompletionItemProvider',
+      doc.uri,
+      position
+    );
+
+    assert.ok(completions);
+    assert.ok(completions.items.length > 0);
+  });
+
+  test('Hover information is provided', async () => {
+    const doc = await vscode.workspace.openTextDocument({
+      language: 'javascript',
+      content: 'const myVar = 123;'
+    });
+
+    const position = new vscode.Position(0, 6); // On 'myVar'
+    const hovers = await vscode.commands.executeCommand<vscode.Hover[]>(
+      'vscode.executeHoverProvider',
+      doc.uri,
+      position
+    );
+
+    assert.ok(hovers);
+    assert.ok(hovers.length > 0);
+  });
+
+  test('Diagnostics are created', async () => {
+    const doc = await vscode.workspace.openTextDocument({
+      language: 'javascript',
+      content: 'const x = ;' // Syntax error
+    });
+
+    await vscode.window.showTextDocument(doc);
+    
+    // Wait for diagnostics
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const diagnostics = vscode.languages.getDiagnostics(doc.uri);
+    assert.ok(diagnostics.length > 0);
+  });
+});
+```
+
+### Async Tests and Timeouts
+
+```typescript
+import * as assert from 'assert';
+import * as vscode from 'vscode';
+
+suite('Async Tests', () => {
+  test('Async operation with custom timeout', async function() {
+    this.timeout(5000); // 5 second timeout
+
+    const result = await someSlowOperation();
+    assert.ok(result);
+  });
+
+  test('Wait for event', async () => {
+    const disposable = vscode.workspace.onDidChangeConfiguration(e => {
+      // Handle configuration change
+    });
+
+    // Trigger configuration change
+    await vscode.workspace.getConfiguration('myExtension').update('setting', 'value');
+
+    // Wait for event to fire
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    disposable.dispose();
+  });
+});
+
+function someSlowOperation(): Promise<boolean> {
+  return new Promise(resolve => {
+    setTimeout(() => resolve(true), 2000);
+  });
+}
+```
+
+## Test Fixtures
+
+Create test fixture files for your tests:
+
+```
+test-fixtures/
+├── workspace/
+│   ├── .vscode/
+│   │   └── settings.json
+│   ├── src/
+│   │   └── sample.js
+│   └── package.json
+└── files/
+    ├── test.md
+    └── test.json
+```
+
+<Note>
+Test fixtures should be separate from your source code and test files. Place them in a `test-fixtures` directory.
+</Note>
+
+## Package.json Configuration
+
+Add test scripts to your `package.json`:
+
+```json
+{
+  "scripts": {
+    "test": "node ./out/test/runTest.js",
+    "pretest": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.0",
+    "@types/node": "^18.x",
+    "@types/vscode": "^1.80.0",
+    "@vscode/test-electron": "^2.3.0",
+    "mocha": "^10.2.0",
+    "typescript": "^5.0.0"
+  }
+}
+```
+
+## Running Tests
+
+<CodeGroup>
+```bash npm
+npm test
+```
+
+```bash yarn
+yarn test
+```
+
+```bash pnpm
+pnpm test
+```
+</CodeGroup>
+
+## Debugging Tests
+
+### VS Code Launch Configuration
+
+Add this to `.vscode/launch.json`:
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Extension Tests",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}",
+        "--extensionTestsPath=${workspaceFolder}/out/test/suite/index"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/out/test/**/*.js"
+      ],
+      "preLaunchTask": "${defaultBuildTask}"
+    }
+  ]
+}
+```
+
+### Debugging Tips
+
+<Card title="Debugging Best Practices" icon="bug">
+1. **Set breakpoints**: Place breakpoints in both test files and extension code
+2. **Use console.log**: Output debug information during test execution
+3. **Inspect variables**: Hover over variables to see their values
+4. **Step through**: Use F10/F11 to step through test execution
+5. **Debug console**: Use the debug console to evaluate expressions
+</Card>
+
+## CI/CD Integration
+
+### GitHub Actions
+
+```yaml
+name: Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run tests
+      run: xvfb-run -a npm test
+      if: runner.os == 'Linux'
+    
+    - name: Run tests
+      run: npm test
+      if: runner.os != 'Linux'
+```
+
+<Note>
+Linux CI environments require `xvfb` to run VS Code in headless mode.
+</Note>
+
+## Best Practices
+
+<Card title="Testing Guidelines" icon="check">
+1. **Test in isolation**: Each test should be independent
+2. **Clean up**: Dispose of resources after tests
+3. **Use meaningful names**: Name tests to describe what they verify
+4. **Test edge cases**: Include tests for error conditions
+5. **Mock external dependencies**: Don't rely on external services
+6. **Keep tests fast**: Optimize for quick feedback
+</Card>
+
+### Example: Clean Resource Management
+
+```typescript
+import * as vscode from 'vscode';
+import * as assert from 'assert';
+
+suite('Resource Management', () => {
+  let disposables: vscode.Disposable[] = [];
+
+  teardown(() => {
+    // Clean up after each test
+    disposables.forEach(d => d.dispose());
+    disposables = [];
+  });
+
+  test('Register and dispose command', () => {
+    const command = vscode.commands.registerCommand('test.command', () => {});
+    disposables.push(command);
+
+    assert.ok(command);
+    // Command will be automatically disposed in teardown
+  });
+});
+```
+
+## Common Issues
+
+<Warning>
+**Extension not activating**: Ensure your activation events are configured correctly and the extension is installed in the test VS Code instance.
+</Warning>
+
+<Warning>
+**Tests timing out**: Increase the Mocha timeout for async operations that take longer than the default 2 seconds.
+</Warning>
+
+<Warning>
+**File system issues**: Use `vscode.workspace.fs` API instead of Node.js `fs` module for better compatibility.
+</Warning>
+
+## Advanced Testing
+
+### Testing with Mock Data
+
+```typescript
+import * as assert from 'assert';
+import * as vscode from 'vscode';
+
+interface MockData {
+  id: number;
+  name: string;
+}
+
+suite('Mock Data Tests', () => {
+  test('Process mock data', () => {
+    const mockData: MockData[] = [
+      { id: 1, name: 'Test 1' },
+      { id: 2, name: 'Test 2' }
+    ];
+
+    const result = processData(mockData);
+    assert.strictEqual(result.length, 2);
+  });
+});
+
+function processData(data: MockData[]): MockData[] {
+  return data.filter(item => item.id > 0);
+}
+```
+
+### Testing Error Handling
+
+```typescript
+import * as assert from 'assert';
+import * as vscode from 'vscode';
+
+suite('Error Handling', () => {
+  test('Command handles errors gracefully', async () => {
+    try {
+      await vscode.commands.executeCommand('myExtension.failingCommand');
+      assert.fail('Should have thrown an error');
+    } catch (error) {
+      assert.ok(error);
+      assert.ok(error.message.includes('expected error'));
+    }
+  });
+});
+```
+
+## Real-World Example
+
+Here's a complete test from the ipynb extension:
+
+<Accordion title="ipynb Extension Test">
+```typescript
+import * as assert from 'assert';
+import * as vscode from 'vscode';
+
+suite('Clear Outputs Test', () => {
+  const disposables: vscode.Disposable[] = [];
+  const context = { subscriptions: disposables } as vscode.ExtensionContext;
+
+  teardown(() => {
+    disposables.forEach(d => d.dispose());
+    disposables.length = 0;
+  });
+
+  test('Clear outputs command is registered', async () => {
+    const commands = await vscode.commands.getCommands(true);
+    assert.ok(commands.includes('ipynb.clearOutputs'));
+  });
+
+  test('Clear outputs removes cell output', async () => {
+    // Create a test notebook
+    const notebook = await vscode.workspace.openNotebookDocument(
+      'jupyter-notebook',
+      {
+        cells: [
+          {
+            kind: vscode.NotebookCellKind.Code,
+            languageId: 'python',
+            value: 'print("Hello")',
+            outputs: [{
+              items: [{
+                mime: 'text/plain',
+                data: Buffer.from('Hello')
+              }]
+            }]
+          }
+        ]
+      }
+    );
+
+    // Execute clear outputs command
+    await vscode.commands.executeCommand('ipynb.clearOutputs', notebook.uri);
+
+    // Verify outputs are cleared
+    assert.strictEqual(notebook.cellAt(0).outputs.length, 0);
+  });
+});
+```
+</Accordion>
+
+## Summary
+
+Testing your VS Code extension ensures reliability and helps catch bugs early. Key takeaways:
+
+- Use `@vscode/test-electron` for integration tests with full API access
+- Structure tests in a `test/suite` directory
+- Configure Mocha for test running
+- Test commands, language features, and document operations
+- Clean up resources in teardown
+- Integrate with CI/CD for automated testing

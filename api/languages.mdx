@@ -1,0 +1,374 @@
+---
+title: "Languages API"
+description: "Provide language features and IntelliSense"
+---
+
+## Overview
+
+The `vscode.languages` namespace provides functions to register language features like code completion, hover information, diagnostics, and more. These are the APIs that power IntelliSense.
+
+## Language Feature Providers
+
+### registerCompletionItemProvider
+
+Register a completion provider for IntelliSense suggestions.
+
+```typescript
+function registerCompletionItemProvider(
+  selector: DocumentSelector,
+  provider: CompletionItemProvider,
+  ...triggerCharacters: string[]
+): Disposable
+```
+
+<ParamField path="selector" type="DocumentSelector" required>
+  Document selector to identify which documents the provider applies to
+</ParamField>
+
+<ParamField path="provider" type="CompletionItemProvider" required>
+  The completion provider object
+</ParamField>
+
+<ParamField path="triggerCharacters" type="string[]">
+  Characters that trigger completion automatically (e.g., '.', '>')
+</ParamField>
+
+**Example:**
+
+```typescript
+import * as vscode from 'vscode';
+
+const provider: vscode.CompletionItemProvider = {
+  provideCompletionItems(
+    document: vscode.TextDocument,
+    position: vscode.Position
+  ) {
+    const linePrefix = document
+      .lineAt(position)
+      .text.substr(0, position.character);
+    
+    if (!linePrefix.endsWith('console.')) {
+      return undefined;
+    }
+
+    return [
+      new vscode.CompletionItem('log', vscode.CompletionItemKind.Method),
+      new vscode.CompletionItem('warn', vscode.CompletionItemKind.Method),
+      new vscode.CompletionItem('error', vscode.CompletionItemKind.Method),
+    ];
+  }
+};
+
+vscode.languages.registerCompletionItemProvider(
+  'javascript',
+  provider,
+  '.' // Trigger character
+);
+```
+
+### registerHoverProvider
+
+Register a hover provider to show information when hovering over code.
+
+```typescript
+function registerHoverProvider(
+  selector: DocumentSelector,
+  provider: HoverProvider
+): Disposable
+```
+
+**Example:**
+
+```typescript
+const hoverProvider: vscode.HoverProvider = {
+  provideHover(document, position, token) {
+    const range = document.getWordRangeAtPosition(position);
+    const word = document.getText(range);
+    
+    return new vscode.Hover([
+      `**${word}**`,
+      'Documentation for this symbol'
+    ]);
+  }
+};
+
+vscode.languages.registerHoverProvider('javascript', hoverProvider);
+```
+
+### registerDefinitionProvider
+
+Register a definition provider for "Go to Definition" functionality.
+
+```typescript
+function registerDefinitionProvider(
+  selector: DocumentSelector,
+  provider: DefinitionProvider
+): Disposable
+```
+
+**Example:**
+
+```typescript
+const definitionProvider: vscode.DefinitionProvider = {
+  provideDefinition(document, position, token) {
+    const range = document.getWordRangeAtPosition(position);
+    const word = document.getText(range);
+    
+    // Find definition location
+    const definitionUri = vscode.Uri.file('/path/to/definition.ts');
+    const definitionPosition = new vscode.Position(10, 5);
+    
+    return new vscode.Location(definitionUri, definitionPosition);
+  }
+};
+
+vscode.languages.registerDefinitionProvider('typescript', definitionProvider);
+```
+
+### registerCodeActionsProvider
+
+Register a code actions provider for quick fixes and refactorings.
+
+```typescript
+function registerCodeActionsProvider(
+  selector: DocumentSelector,
+  provider: CodeActionProvider,
+  metadata?: CodeActionProviderMetadata
+): Disposable
+```
+
+**Example:**
+
+```typescript
+const codeActionProvider: vscode.CodeActionProvider = {
+  provideCodeActions(document, range, context, token) {
+    const quickFix = new vscode.CodeAction(
+      'Convert to const',
+      vscode.CodeActionKind.QuickFix
+    );
+    
+    quickFix.edit = new vscode.WorkspaceEdit();
+    quickFix.edit.replace(
+      document.uri,
+      range,
+      'const'
+    );
+    
+    return [quickFix];
+  }
+};
+
+vscode.languages.registerCodeActionsProvider(
+  'javascript',
+  codeActionProvider,
+  {
+    providedCodeActionKinds: [vscode.CodeActionKind.QuickFix]
+  }
+);
+```
+
+## Diagnostics
+
+### createDiagnosticCollection
+
+Create a diagnostic collection to report problems.
+
+```typescript
+function createDiagnosticCollection(
+  name?: string
+): DiagnosticCollection
+```
+
+**Example:**
+
+```typescript
+const diagnostics = vscode.languages.createDiagnosticCollection('myLinter');
+
+function updateDiagnostics(document: vscode.TextDocument) {
+  const diagnosticsList: vscode.Diagnostic[] = [];
+  
+  for (let i = 0; i < document.lineCount; i++) {
+    const line = document.lineAt(i);
+    if (line.text.includes('TODO')) {
+      const diagnostic = new vscode.Diagnostic(
+        line.range,
+        'TODO found',
+        vscode.DiagnosticSeverity.Information
+      );
+      diagnosticsList.push(diagnostic);
+    }
+  }
+  
+  diagnostics.set(document.uri, diagnosticsList);
+}
+
+vscode.workspace.onDidChangeTextDocument(e => {
+  updateDiagnostics(e.document);
+});
+```
+
+## Document Symbols
+
+### registerDocumentSymbolProvider
+
+Register a document symbol provider for outline view.
+
+```typescript
+function registerDocumentSymbolProvider(
+  selector: DocumentSelector,
+  provider: DocumentSymbolProvider,
+  metaData?: DocumentSymbolProviderMetadata
+): Disposable
+```
+
+**Example:**
+
+```typescript
+const symbolProvider: vscode.DocumentSymbolProvider = {
+  provideDocumentSymbols(document, token) {
+    const symbols: vscode.DocumentSymbol[] = [];
+    
+    for (let i = 0; i < document.lineCount; i++) {
+      const line = document.lineAt(i);
+      const match = line.text.match(/function\s+(\w+)/);
+      
+      if (match) {
+        const symbol = new vscode.DocumentSymbol(
+          match[1],
+          'Function',
+          vscode.SymbolKind.Function,
+          line.range,
+          line.range
+        );
+        symbols.push(symbol);
+      }
+    }
+    
+    return symbols;
+  }
+};
+
+vscode.languages.registerDocumentSymbolProvider(
+  'javascript',
+  symbolProvider
+);
+```
+
+## Formatting
+
+### registerDocumentFormattingEditProvider
+
+Register a document formatter.
+
+```typescript
+function registerDocumentFormattingEditProvider(
+  selector: DocumentSelector,
+  provider: DocumentFormattingEditProvider
+): Disposable
+```
+
+**Example:**
+
+```typescript
+const formattingProvider: vscode.DocumentFormattingEditProvider = {
+  provideDocumentFormattingEdits(document, options, token) {
+    const edits: vscode.TextEdit[] = [];
+    
+    // Format entire document
+    const firstLine = document.lineAt(0);
+    const lastLine = document.lineAt(document.lineCount - 1);
+    const range = new vscode.Range(firstLine.range.start, lastLine.range.end);
+    
+    const formatted = formatCode(document.getText());
+    edits.push(vscode.TextEdit.replace(range, formatted));
+    
+    return edits;
+  }
+};
+
+vscode.languages.registerDocumentFormattingEditProvider(
+  'javascript',
+  formattingProvider
+);
+```
+
+## Language Configuration
+
+### setLanguageConfiguration
+
+Set language-specific configuration.
+
+```typescript
+function setLanguageConfiguration(
+  language: string,
+  configuration: LanguageConfiguration
+): Disposable
+```
+
+**Example:**
+
+```typescript
+vscode.languages.setLanguageConfiguration('myLanguage', {
+  comments: {
+    lineComment: '//',
+    blockComment: ['/*', '*/']
+  },
+  brackets: [
+    ['{', '}'],
+    ['[', ']'],
+    ['(', ')']
+  ],
+  autoClosingPairs: [
+    { open: '{', close: '}' },
+    { open: '[', close: ']' },
+    { open: '(', close: ')' },
+    { open: '"', close: '"' },
+  ],
+  wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g
+});
+```
+
+## Other Providers
+
+<Accordion title="Reference Provider">
+  `registerReferenceProvider` - Find all references to a symbol
+</Accordion>
+
+<Accordion title="Rename Provider">
+  `registerRenameProvider` - Rename symbols across files
+</Accordion>
+
+<Accordion title="Document Highlight Provider">
+  `registerDocumentHighlightProvider` - Highlight occurrences of a symbol
+</Accordion>
+
+<Accordion title="Signature Help Provider">
+  `registerSignatureHelpProvider` - Show function signature help
+</Accordion>
+
+<Accordion title="Code Lens Provider">
+  `registerCodeLensProvider` - Show actionable contextual information
+</Accordion>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Return Quickly" icon="bolt">
+    Language providers should return results quickly to avoid blocking the UI
+  </Card>
+  <Card title="Use Cancellation Tokens" icon="ban">
+    Check cancellation tokens to abort long-running operations
+  </Card>
+  <Card title="Dispose Resources" icon="trash">
+    Always dispose diagnostic collections and provider registrations
+  </Card>
+  <Card title="Cache Results" icon="database">
+    Cache expensive computations and invalidate on document changes
+  </Card>
+</CardGroup>
+
+## Related Resources
+
+<Card title="Language Providers Guide" icon="book" href="/api/guides/language-providers">
+  Learn more about implementing language features
+</Card>

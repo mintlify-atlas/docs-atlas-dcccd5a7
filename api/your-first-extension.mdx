@@ -1,0 +1,341 @@
+---
+title: Your First Extension
+description: Create your first VS Code extension with this step-by-step tutorial
+---
+
+# Your First Extension
+
+This tutorial walks you through creating a simple VS Code extension that displays a "Hello World" message. You'll learn the fundamental concepts of extension development and the basic structure of an extension.
+
+## What You'll Build
+
+You'll create an extension that:
+- Registers a command called "Hello World"
+- Shows an information message when the command is executed
+- Can be invoked from the Command Palette
+
+## Prerequisites
+
+<Note>
+Before you begin, make sure you have:
+- Node.js and npm installed
+- Visual Studio Code installed
+- Basic knowledge of TypeScript or JavaScript
+</Note>
+
+## Create Your Extension
+
+<Steps>
+
+<Step title="Set up the project structure">
+Create a new directory for your extension and initialize it:
+
+```bash
+mkdir hello-world-extension
+cd hello-world-extension
+npm init -y
+```
+
+Install the VS Code types as a dev dependency:
+
+```bash
+npm install --save-dev @types/vscode
+```
+</Step>
+
+<Step title="Create the package.json manifest">
+Create or update your `package.json` file with the extension metadata:
+
+```json package.json
+{
+  "name": "hello-world",
+  "displayName": "Hello World",
+  "description": "A simple Hello World extension",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.70.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:helloWorld.sayHello"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "helloWorld.sayHello",
+        "title": "Hello World: Say Hello"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.70.0",
+    "typescript": "^4.9.0"
+  }
+}
+```
+
+<Tip>
+The `engines.vscode` field specifies the minimum VS Code version your extension requires.
+</Tip>
+</Step>
+
+<Step title="Create the TypeScript configuration">
+Create a `tsconfig.json` file to configure TypeScript:
+
+```json tsconfig.json
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ES2020",
+    "outDir": "out",
+    "lib": ["ES2020"],
+    "sourceMap": true,
+    "rootDir": "src",
+    "strict": true
+  },
+  "exclude": ["node_modules", ".vscode-test"]
+}
+```
+</Step>
+
+<Step title="Create the extension entry point">
+Create a `src/extension.ts` file with your extension code:
+
+```typescript src/extension.ts
+import * as vscode from 'vscode';
+
+// This method is called when your extension is activated
+export function activate(context: vscode.ExtensionContext) {
+  console.log('Hello World extension is now active!');
+
+  // Register a command handler
+  const disposable = vscode.commands.registerCommand(
+    'helloWorld.sayHello',
+    () => {
+      // Display a message box to the user
+      vscode.window.showInformationMessage('Hello World from VS Code!');
+    }
+  );
+
+  // Add to subscriptions so it gets disposed when extension deactivates
+  context.subscriptions.push(disposable);
+}
+
+// This method is called when your extension is deactivated
+export function deactivate() {
+  console.log('Hello World extension is now deactivated');
+}
+```
+
+<Note>
+The `activate` function is the entry point of your extension. It's called when your extension is activated (based on `activationEvents`).
+</Note>
+</Step>
+
+<Step title="Compile the extension">
+Compile your TypeScript code to JavaScript:
+
+```bash
+npm run compile
+```
+
+This creates the compiled JavaScript in the `out` directory.
+</Step>
+
+<Step title="Test the extension">
+Press `F5` in VS Code to open a new Extension Development Host window with your extension loaded.
+
+In the new window:
+1. Press `Cmd+Shift+P` (Mac) or `Ctrl+Shift+P` (Windows/Linux) to open the Command Palette
+2. Type "Hello World: Say Hello" and select the command
+3. You should see an information message: "Hello World from VS Code!"
+
+<Tip>
+Check the Debug Console in your main VS Code window to see the console.log output from your extension.
+</Tip>
+</Step>
+
+</Steps>
+
+## Understanding the Code
+
+Let's break down the key components:
+
+### The ExtensionContext
+
+```typescript
+export function activate(context: vscode.ExtensionContext) {
+  // ...
+}
+```
+
+The `ExtensionContext` is passed to your `activate` function and provides:
+- `subscriptions` - An array where you add disposables for cleanup
+- `extensionPath` - The absolute file path of your extension directory
+- `globalState` and `workspaceState` - Storage APIs for persisting data
+
+### Registering Commands
+
+```typescript
+const disposable = vscode.commands.registerCommand(
+  'helloWorld.sayHello',
+  () => {
+    vscode.window.showInformationMessage('Hello World from VS Code!');
+  }
+);
+```
+
+The `commands.registerCommand` function:
+- Takes a command identifier (must match `package.json`)
+- Takes a callback function to execute when the command is invoked
+- Returns a `Disposable` to clean up the command registration
+
+### Showing Messages
+
+```typescript
+vscode.window.showInformationMessage('Hello World from VS Code!');
+```
+
+The `window` namespace provides several message functions:
+
+<CodeGroup>
+
+```typescript Information
+vscode.window.showInformationMessage('Info message');
+```
+
+```typescript Warning
+vscode.window.showWarningMessage('Warning message');
+```
+
+```typescript Error
+vscode.window.showErrorMessage('Error message');
+```
+
+```typescript With Buttons
+vscode.window.showInformationMessage(
+  'Choose an option',
+  'Option 1',
+  'Option 2'
+).then(selection => {
+  console.log('User selected:', selection);
+});
+```
+
+</CodeGroup>
+
+## Enhancing Your Extension
+
+Now that you have a basic extension working, try adding more features:
+
+### Add a Second Command
+
+Update your `package.json` to add another command:
+
+```json package.json
+"contributes": {
+  "commands": [
+    {
+      "command": "helloWorld.sayHello",
+      "title": "Hello World: Say Hello"
+    },
+    {
+      "command": "helloWorld.askName",
+      "title": "Hello World: Ask Name"
+    }
+  ]
+}
+```
+
+Then register it in your extension:
+
+```typescript src/extension.ts
+export function activate(context: vscode.ExtensionContext) {
+  // First command
+  context.subscriptions.push(
+    vscode.commands.registerCommand('helloWorld.sayHello', () => {
+      vscode.window.showInformationMessage('Hello World from VS Code!');
+    })
+  );
+
+  // Second command with user input
+  context.subscriptions.push(
+    vscode.commands.registerCommand('helloWorld.askName', async () => {
+      const name = await vscode.window.showInputBox({
+        prompt: 'What is your name?',
+        placeHolder: 'Enter your name'
+      });
+
+      if (name) {
+        vscode.window.showInformationMessage(`Hello, ${name}!`);
+      }
+    })
+  );
+}
+```
+
+### Access the Active Editor
+
+Get information about the currently active text editor:
+
+```typescript
+const disposable = vscode.commands.registerCommand(
+  'helloWorld.showFileName',
+  () => {
+    const editor = vscode.window.activeTextEditor;
+    if (editor) {
+      const fileName = editor.document.fileName;
+      vscode.window.showInformationMessage(`Active file: ${fileName}`);
+    } else {
+      vscode.window.showInformationMessage('No active editor');
+    }
+  }
+);
+```
+
+### Listen to Events
+
+React to changes in the editor:
+
+```typescript
+const changeDisposable = vscode.workspace.onDidChangeTextDocument(event => {
+  console.log('Document changed:', event.document.fileName);
+  console.log('Number of changes:', event.contentChanges.length);
+});
+
+context.subscriptions.push(changeDisposable);
+```
+
+<Warning>
+Be careful with event listeners - they fire frequently and can impact performance if your handler does expensive operations.
+</Warning>
+
+## Debugging Your Extension
+
+To debug your extension:
+
+1. Set breakpoints in your TypeScript code by clicking in the gutter
+2. Press `F5` to launch the Extension Development Host
+3. Trigger your command in the new window
+4. The debugger will pause at your breakpoints
+
+<Tip>
+Use `console.log()` for quick debugging - output appears in the Debug Console of your main VS Code window.
+</Tip>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Extension Anatomy" href="./extension-anatomy">
+    Learn about the structure and lifecycle of extensions
+  </Card>
+  <Card title="API Overview" href="./overview">
+    Explore the full VS Code Extension API
+  </Card>
+</CardGroup>

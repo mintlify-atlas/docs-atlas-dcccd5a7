@@ -1,0 +1,546 @@
+---
+title: 'CLI Commands Reference'
+description: 'Complete reference of all Visual Studio Code CLI commands, flags, and options'
+---
+
+## Commands Overview
+
+The VS Code CLI provides several powerful commands for managing your development environment:
+
+```bash
+code [options] [paths...]     # Open files/folders
+code tunnel                   # Create remote tunnel
+code ext                      # Manage extensions
+code status                   # Print diagnostics
+code version                  # Manage VS Code versions
+code serve-web                # Run local web server
+```
+
+## Opening Files and Folders
+
+The default command (no subcommand) opens files and folders in VS Code.
+
+### Basic Usage
+
+```bash
+# Open current directory
+code .
+
+# Open specific files
+code file1.js file2.js
+
+# Open from stdin
+cat README.md | code -
+```
+
+### Editor Options
+
+<ParamField path="--diff" type="file file">
+  Compare two files with each other
+  
+  ```bash
+  code --diff old.js new.js
+  ```
+</ParamField>
+
+<ParamField path="--add" type="folder">
+  Add folder(s) to the last active window
+  
+  ```bash
+  code --add ~/projects/library
+  ```
+</ParamField>
+
+<ParamField path="--goto" type="file:line[:character]">
+  Open a file at the specified line and character position
+  
+  ```bash
+  code --goto index.ts:42:15
+  ```
+</ParamField>
+
+<ParamField path="--new-window" type="boolean" default="false">
+  Force opening a new window
+  
+  ```bash
+  code --new-window ~/project
+  ```
+</ParamField>
+
+<ParamField path="--reuse-window" type="boolean" default="false">
+  Force reusing an existing window
+  
+  ```bash
+  code --reuse-window file.txt
+  ```
+</ParamField>
+
+<ParamField path="--wait" type="boolean" default="false">
+  Wait for the files to be closed before returning. Essential for Git editor integration.
+  
+  ```bash
+  export EDITOR="code --wait"
+  git commit  # Opens commit message in VS Code and waits
+  ```
+</ParamField>
+
+<ParamField path="--locale" type="string">
+  Set the display language (locale)
+  
+  ```bash
+  code --locale=ja-JP
+  ```
+</ParamField>
+
+<ParamField path="--enable-proposed-api" type="extension-id...">
+  Enable proposed API features for specified extensions
+  
+  ```bash
+  code --enable-proposed-api publisher.extension-name
+  ```
+</ParamField>
+
+---
+
+## Extension Management
+
+Manage VS Code extensions from the command line.
+
+### ext list
+
+List all installed extensions:
+
+```bash
+code ext list
+```
+
+<CodeGroup>
+```bash Standard output
+code ext list
+ms-python.python
+dbaeumer.vscode-eslint
+esbenp.prettier-vscode
+```
+
+```bash With versions
+code ext list --show-versions
+ms-python.python@2023.20.0
+dbaeumer.vscode-eslint@2.4.2
+esbenp.prettier-vscode@10.1.0
+```
+
+```bash Filter by category
+code ext list --category themes
+vscode-icons-team.vscode-icons
+PKief.material-icon-theme
+```
+</CodeGroup>
+
+#### Options
+
+<ParamField path="--show-versions" type="boolean">
+  Display version numbers alongside extension IDs
+</ParamField>
+
+<ParamField path="--category" type="string">
+  Filter extensions by category (e.g., themes, formatters, linters)
+</ParamField>
+
+### ext install
+
+Install one or more extensions:
+
+```bash
+code ext install <extension-id>
+```
+
+<CodeGroup>
+```bash Single extension
+code ext install ms-python.python
+```
+
+```bash Multiple extensions
+code ext install ms-python.python dbaeumer.vscode-eslint
+```
+
+```bash Specific version
+code ext install ms-python.python@2023.10.0
+```
+
+```bash From VSIX file
+code ext install ./my-extension-0.0.1.vsix
+```
+
+```bash Pre-release version
+code ext install ms-python.python --pre-release
+```
+</CodeGroup>
+
+#### Options
+
+<ParamField path="<id-or-path>" type="string[]" required>
+  Extension identifier(s) in format `${publisher}.${name}` or path(s) to VSIX file(s). Use `@${version}` to install specific version.
+</ParamField>
+
+<ParamField path="--pre-release" type="boolean">
+  Install the pre-release version of the extension
+</ParamField>
+
+<ParamField path="--force" type="boolean">
+  Update to the latest version even if already installed
+</ParamField>
+
+<ParamField path="--donot-include-pack-and-dependencies" type="boolean">
+  Don't install extension packs and dependencies
+</ParamField>
+
+### ext uninstall
+
+Uninstall one or more extensions:
+
+```bash
+code ext uninstall <extension-id>
+```
+
+```bash
+code ext uninstall ms-python.python
+code ext uninstall ms-python.python dbaeumer.vscode-eslint
+```
+
+<ParamField path="<extension-id>" type="string[]" required>
+  One or more extension identifiers to uninstall
+</ParamField>
+
+### ext update
+
+Update all installed extensions to their latest versions:
+
+```bash
+code ext update
+```
+
+---
+
+## Status Command
+
+Print process usage and diagnostics information:
+
+```bash
+code status
+```
+
+This displays detailed information about running VS Code processes, memory usage, CPU usage, and other diagnostic data. Useful for troubleshooting performance issues.
+
+<CodeGroup>
+```bash Example output
+code status
+
+Version:          1.85.0
+Commit:           a0d0e3f
+Date:             2023-11-29T10:15:30.000Z
+Electron:         25.9.7
+Chrome:           114.0.5735.289
+Node.js:          18.15.0
+V8:               11.4.183.29
+OS:               Linux x64 5.15.0
+
+CPU Usage:
+  Renderer:       8%
+  Extension Host: 2%
+  
+Memory Usage:
+  Renderer:       245 MB
+  Extension Host: 87 MB
+```
+</CodeGroup>
+
+---
+
+## Version Management
+
+Manage and switch between different VS Code versions.
+
+### version use
+
+Switch to a different VS Code version:
+
+```bash
+code version use <version>
+```
+
+<CodeGroup>
+```bash Stable release
+code version use stable
+```
+
+```bash Insiders build
+code version use insiders
+```
+
+```bash Specific version
+code version use 1.85.0
+```
+
+```bash Absolute path
+code version use /opt/vscode-custom
+```
+</CodeGroup>
+
+#### Options
+
+<ParamField path="<version>" type="string" required>
+  Version to use: `stable`, `insiders`, specific version number (e.g., `1.85.0`), or absolute path to existing installation
+</ParamField>
+
+<ParamField path="--install-dir" type="path">
+  Directory where the version can be found
+</ParamField>
+
+### version show
+
+Display the currently configured VS Code version:
+
+```bash
+code version show
+```
+
+<CodeGroup>
+```bash Example output
+code version show
+Current quality: stable
+Installation path: /usr/share/code
+```
+</CodeGroup>
+
+---
+
+## Web Server
+
+Run a local web version of VS Code accessible via browser.
+
+```bash
+code serve-web [options]
+```
+
+<CodeGroup>
+```bash Basic usage
+code serve-web
+# Web UI available at http://localhost:8000?tkn=<token>
+```
+
+```bash Custom port
+code serve-web --port 3000
+```
+
+```bash Custom host
+code serve-web --host 0.0.0.0 --port 8080
+```
+
+```bash With connection token
+code serve-web --connection-token mySecretToken123
+```
+</CodeGroup>
+
+### Options
+
+<ParamField path="--host" type="string" default="localhost">
+  Host to listen on
+  
+  ```bash
+  code serve-web --host 0.0.0.0
+  ```
+</ParamField>
+
+<ParamField path="--port" type="number" default="8000">
+  Port to listen on. Use `0` for random free port.
+  
+  ```bash
+  code serve-web --port 0  # Random port
+  ```
+</ParamField>
+
+<ParamField path="--socket-path" type="string">
+  Path to a socket file for the server to listen on
+</ParamField>
+
+<ParamField path="--connection-token" type="string">
+  A secret that must be included with all requests for authentication
+</ParamField>
+
+<ParamField path="--connection-token-file" type="string">
+  Path to file containing the connection token
+</ParamField>
+
+<ParamField path="--without-connection-token" type="boolean">
+  Run without a connection token (only if connection is secured by other means)
+  
+  <Note>
+    Only use this option if you have other security measures in place, as it removes authentication.
+  </Note>
+</ParamField>
+
+<ParamField path="--server-base-path" type="string">
+  Specifies the path under which the web UI and code server are provided
+  
+  ```bash
+  code serve-web --server-base-path /vscode
+  # Access at http://localhost:8000/vscode
+  ```
+</ParamField>
+
+<ParamField path="--server-data-dir" type="string">
+  Directory where server data is kept
+</ParamField>
+
+<ParamField path="--commit-id" type="string">
+  Use a specific commit SHA for the client
+</ParamField>
+
+<ParamField path="--accept-server-license-terms" type="boolean">
+  Accept the server license terms without prompting
+</ParamField>
+
+---
+
+## Troubleshooting Options
+
+These options help diagnose and fix issues:
+
+<ParamField path="--disable-extensions" type="boolean">
+  Disable all installed extensions
+  
+  ```bash
+  code --disable-extensions
+  ```
+</ParamField>
+
+<ParamField path="--disable-extension" type="extension-id...">
+  Disable specific extension(s)
+  
+  ```bash
+  code --disable-extension ms-python.python
+  ```
+</ParamField>
+
+<ParamField path="--disable-gpu" type="boolean">
+  Disable GPU hardware acceleration
+  
+  ```bash
+  code --disable-gpu
+  ```
+</ParamField>
+
+<ParamField path="--prof-startup" type="boolean">
+  Run CPU profiler during startup for performance analysis
+</ParamField>
+
+<ParamField path="--inspect-extensions" type="port">
+  Allow debugging and profiling of extensions
+  
+  ```bash
+  code --inspect-extensions=9333
+  ```
+</ParamField>
+
+<ParamField path="--inspect-brk-extensions" type="port">
+  Like `--inspect-extensions`, but pauses extension host at start
+</ParamField>
+
+<ParamField path="--sync" type="on | off">
+  Turn settings sync on or off
+  
+  ```bash
+  code --sync=off
+  ```
+</ParamField>
+
+<ParamField path="--telemetry" type="boolean">
+  Shows all telemetry events the editor collects
+</ParamField>
+
+---
+
+## Configuration Options
+
+<ParamField path="--extensions-dir" type="directory">
+  Set the root path for extensions
+  
+  ```bash
+  code --extensions-dir ~/.vscode-extensions-custom
+  ```
+</ParamField>
+
+<ParamField path="--user-data-dir" type="directory">
+  Specify directory for user data. Useful for running multiple isolated instances.
+  
+  ```bash
+  code --user-data-dir ~/.vscode-test
+  ```
+</ParamField>
+
+<ParamField path="--use-version" type="string">
+  Set the editor version for this command. Can be persisted with `code version use`.
+  
+  ```bash
+  code --use-version insiders .
+  ```
+</ParamField>
+
+---
+
+## Legacy Command Support
+
+The CLI maintains backward compatibility with legacy flags:
+
+<CodeGroup>
+```bash Modern syntax
+code ext list --show-versions
+code ext install ms-python.python
+code ext uninstall ms-python.python
+```
+
+```bash Legacy syntax (still supported)
+code --list-extensions --show-versions
+code --install-extension ms-python.python
+code --uninstall-extension ms-python.python
+```
+</CodeGroup>
+
+<Note>
+  While legacy flags are supported for backward compatibility, using the modern command syntax (`code ext ...`) is recommended for new scripts.
+</Note>
+
+---
+
+## Exit Codes
+
+The CLI returns standard exit codes:
+
+- `0` - Success
+- `1` - General error or installation not found
+- Other non-zero values indicate specific errors
+
+These can be used in scripts for error handling:
+
+```bash
+if code ext install ms-python.python; then
+  echo "Extension installed successfully"
+else
+  echo "Failed to install extension"
+  exit 1
+fi
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Remote Tunnels" icon="tunnel" href="/cli/remote-tunnels">
+    Learn about the powerful tunnel command for remote development
+  </Card>
+  
+  <Card title="CLI Overview" icon="book" href="/cli/overview">
+    Return to CLI overview and introduction
+  </Card>
+</CardGroup>

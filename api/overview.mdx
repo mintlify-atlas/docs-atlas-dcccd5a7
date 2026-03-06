@@ -1,0 +1,199 @@
+---
+title: Extension API Overview
+description: Learn about the VS Code Extension API and what you can build
+---
+
+# Extension API Overview
+
+The Visual Studio Code Extension API allows you to extend and customize VS Code in powerful ways. Extensions can add new features, integrate with external tools, and enhance the development experience for users.
+
+## What Can Extensions Do?
+
+VS Code extensions have access to a rich API that enables a wide range of functionality:
+
+### Editor Integration
+
+- **Modify text documents** - Read, write, and manipulate text in the editor using the `TextDocument` and `TextEditor` APIs
+- **Add decorations** - Highlight code, add gutter icons, and style text using `TextEditorDecorationType`
+- **Create custom views** - Build tree views, webviews, and custom editors for unique user experiences
+- **Provide IntelliSense** - Offer code completion, hover information, and signature help
+
+### Language Features
+
+- **Syntax highlighting** - Define grammars and language configurations
+- **Code navigation** - Implement go-to-definition, find references, and symbol search
+- **Refactoring** - Provide code actions, quick fixes, and rename operations
+- **Diagnostics** - Report errors, warnings, and hints in user code
+
+### Workspace Extension
+
+- **File system operations** - Read and write files using the `workspace.fs` API
+- **Tasks** - Define and execute custom build tasks
+- **Debug** - Create debug adapters for custom debuggers
+- **Source control** - Integrate with version control systems
+
+### User Interface
+
+- **Commands** - Register commands that users can invoke from the command palette
+- **Menus** - Add items to context menus, editor title bar, and more
+- **Status bar** - Display information in the status bar
+- **Notifications** - Show information, warning, and error messages
+
+## Core API Namespaces
+
+The VS Code API is organized into several namespaces:
+
+<CardGroup cols={2}>
+  <Card title="commands" icon="terminal">
+    Register and execute commands
+  </Card>
+  <Card title="window" icon="window">
+    Interact with the editor window, show messages, and manage editors
+  </Card>
+  <Card title="workspace" icon="folder-open">
+    Access and manipulate workspace files and folders
+  </Card>
+  <Card title="languages" icon="code">
+    Provide language-specific features like IntelliSense and diagnostics
+  </Card>
+</CardGroup>
+
+## Extension Capabilities
+
+### Common Capabilities
+
+<Tip>
+Most extensions use these fundamental capabilities as building blocks.
+</Tip>
+
+- **Commands** - Keyboard shortcuts, menu items, and command palette entries
+- **Configuration** - User and workspace settings for your extension
+- **Keybindings** - Custom keyboard shortcuts
+- **Context Menus** - Right-click menu items in various parts of the UI
+
+### Theming
+
+- **Color Themes** - Customize the editor's color scheme
+- **File Icon Themes** - Provide custom icons for files and folders
+- **Product Icon Themes** - Customize VS Code's UI icons
+
+### Declarative Language Features
+
+Provide language support without writing code:
+
+- Syntax highlighting via TextMate grammars
+- Bracket matching and auto-closing
+- Comment toggling
+- Folding regions
+
+### Programmatic Language Features
+
+Implement advanced language features:
+
+- Code completion (`CompletionItemProvider`)
+- Hover information (`HoverProvider`)
+- Signature help (`SignatureHelpProvider`)
+- Go to definition (`DefinitionProvider`)
+- Find references (`ReferenceProvider`)
+- Rename symbol (`RenameProvider`)
+- Code actions (`CodeActionProvider`)
+- Diagnostics via `DiagnosticCollection`
+
+### Workbench Integration
+
+<CardGroup cols={2}>
+  <Card title="Tree Views" icon="list-tree">
+    Create custom explorers in the sidebar
+  </Card>
+  <Card title="Webviews" icon="browser">
+    Build fully custom HTML/CSS/JS interfaces
+  </Card>
+  <Card title="Custom Editors" icon="file-code">
+    Provide alternative editors for specific file types
+  </Card>
+  <Card title="Status Bar Items" icon="signal">
+    Display information and controls in the status bar
+  </Card>
+</CardGroup>
+
+## API Fundamentals
+
+### Disposables
+
+Many VS Code APIs return `Disposable` objects that clean up resources when disposed:
+
+```typescript
+const subscription = vscode.window.onDidChangeActiveTextEditor(editor => {
+  console.log('Active editor changed:', editor?.document.fileName);
+});
+
+// Clean up when done
+subscription.dispose();
+```
+
+<Note>
+Add disposables to `context.subscriptions` to automatically dispose them when your extension deactivates.
+</Note>
+
+### Events
+
+VS Code uses an event pattern where you subscribe to events and receive notifications:
+
+```typescript
+vscode.workspace.onDidChangeTextDocument(event => {
+  console.log('Document changed:', event.document.fileName);
+  console.log('Changes:', event.contentChanges);
+});
+```
+
+### Promises and Thenables
+
+Many APIs are asynchronous and return `Thenable` (Promise-like) objects:
+
+```typescript
+vscode.window.showInformationMessage('Choose an option', 'Yes', 'No')
+  .then(selection => {
+    console.log('User selected:', selection);
+  });
+
+// Or use async/await
+const result = await vscode.window.showInformationMessage('Choose', 'A', 'B');
+```
+
+## Extension Manifest
+
+Every extension must have a `package.json` file that describes the extension:
+
+```json
+{
+  "name": "my-extension",
+  "displayName": "My Extension",
+  "version": "1.0.0",
+  "engines": {
+    "vscode": "^1.70.0"
+  },
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "myExtension.helloWorld",
+        "title": "Hello World"
+      }
+    ]
+  }
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Your First Extension" href="./your-first-extension">
+    Build a simple Hello World extension
+  </Card>
+  <Card title="Extension Anatomy" href="./extension-anatomy">
+    Understand the structure of an extension
+  </Card>
+</CardGroup>

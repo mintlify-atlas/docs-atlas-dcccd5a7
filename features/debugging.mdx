@@ -1,0 +1,421 @@
+---
+title: Debugging
+description: Powerful debugging tools with breakpoints, variable inspection, and multi-session support
+---
+
+## Overview
+
+Visual Studio Code includes a powerful debugger that supports breakpoints, call stacks, variable inspection, and interactive console evaluation. The debugger works with Node.js out of the box and can be extended to support other languages through debug adapters.
+
+## Getting Started
+
+<Steps>
+  <Step title="Open Debug View">
+    Click the Debug icon in the Activity Bar or press `Ctrl+Shift+D` (Windows/Linux) or `Cmd+Shift+D` (macOS)
+  </Step>
+  <Step title="Create Launch Configuration">
+    Click "create a launch.json file" to generate a debug configuration
+  </Step>
+  <Step title="Start Debugging">
+    Press `F5` or click the green play button to start debugging
+  </Step>
+</Steps>
+
+## Debug Views
+
+The Debug view contains several panels for inspecting your application:
+
+```typescript
+// From VS Code source: src/vs/workbench/contrib/debug/common/debug.ts
+export const VARIABLES_VIEW_ID = 'workbench.debug.variablesView';
+export const WATCH_VIEW_ID = 'workbench.debug.watchExpressionsView';
+export const CALLSTACK_VIEW_ID = 'workbench.debug.callStackView';
+export const LOADED_SCRIPTS_VIEW_ID = 'workbench.debug.loadedScriptsView';
+export const BREAKPOINTS_VIEW_ID = 'workbench.debug.breakPointsView';
+export const DISASSEMBLY_VIEW_ID = 'workbench.debug.disassemblyView';
+export const DEBUG_PANEL_ID = 'workbench.panel.repl';
+```
+
+<Card title="Debug Panels" icon="layout">
+- **Variables**: Inspect local and global variables
+- **Watch**: Monitor specific expressions
+- **Call Stack**: Navigate through the execution stack
+- **Breakpoints**: Manage all breakpoints in one place
+- **Loaded Scripts**: View all loaded source files
+- **Debug Console**: Evaluate expressions interactively
+</Card>
+
+## Keyboard Shortcuts
+
+| Action | Windows/Linux | macOS |
+|--------|---------------|-------|
+| Start/Continue | `F5` | `F5` |
+| Step Over | `F10` | `F10` |
+| Step Into | `F11` | `F11` |
+| Step Out | `Shift+F11` | `Shift+F11` |
+| Restart | `Ctrl+Shift+F5` | `Cmd+Shift+F5` |
+| Stop | `Shift+F5` | `Shift+F5` |
+| Toggle Breakpoint | `F9` | `F9` |
+
+```typescript
+// From source: debugCommands.ts
+const STEP_INTO_KEYBINDING = (isWeb && isWindows) ? (KeyMod.Alt | KeyCode.F11) : KeyCode.F11;
+// primary: KeyCode.F10 for Step Over
+// primary: KeyMod.Shift | KeyCode.F11 for Step Out
+// primary: KeyMod.Shift | KeyCode.F5 for Stop
+```
+
+## Launch Configuration
+
+Create a `launch.json` file in the `.vscode` folder to configure debugging:
+
+<CodeGroup>
+```json Node.js
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Program",
+      "program": "${workspaceFolder}/app.js",
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ]
+}
+```
+
+```json Attach to Process
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "attach",
+      "name": "Attach to Process",
+      "port": 9229,
+      "restart": true,
+      "timeout": 30000
+    }
+  ]
+}
+```
+
+```json Chrome Debugging
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Launch Chrome",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true
+    }
+  ]
+}
+```
+</CodeGroup>
+
+### Real Example from VS Code Source
+
+Here's an actual configuration from the VS Code repository:
+
+```json
+{
+  "type": "node",
+  "request": "attach",
+  "restart": true,
+  "name": "Attach to Extension Host",
+  "timeout": 0,
+  "port": 5870,
+  "outFiles": [
+    "${workspaceFolder}/out/**/*.js",
+    "${workspaceFolder}/extensions/*/out/**/*.js"
+  ]
+}
+```
+
+## Breakpoints
+
+### Types of Breakpoints
+
+<Steps>
+  <Step title="Line Breakpoints">
+    Click in the gutter next to a line number or press `F9` on the current line
+  </Step>
+  <Step title="Conditional Breakpoints">
+    Right-click on a breakpoint and select "Edit Breakpoint" to add a condition
+  </Step>
+  <Step title="Logpoints">
+    Add a logpoint to output messages without stopping execution
+  </Step>
+  <Step title="Function Breakpoints">
+    Break when a specific function is called
+  </Step>
+  <Step title="Data Breakpoints">
+    Break when a variable's value changes (language support required)
+  </Step>
+</Steps>
+
+### Breakpoint Context Keys
+
+```typescript
+export const CONTEXT_BREAKPOINTS_EXIST = new RawContextKey<boolean>(
+  'breakpointsExist', 
+  false, 
+  { type: 'boolean', description: 'True when at least one breakpoint exists.' }
+);
+
+export const CONTEXT_BREAKPOINT_SUPPORTS_CONDITION = new RawContextKey<boolean>(
+  'breakpointSupportsCondition', 
+  false, 
+  { type: 'boolean', description: 'True when the focused breakpoint supports conditions.' }
+);
+```
+
+### Conditional Breakpoints
+
+Add conditions to breakpoints to break only when specific criteria are met:
+
+```javascript
+// Break only when count > 10
+count > 10
+
+// Break only when user is defined
+user !== undefined
+
+// Break only on specific iterations
+i === 100 || i === 200
+```
+
+### Logpoints
+
+Output messages without stopping execution:
+
+```javascript
+// Logpoint message (use curly braces for expressions)
+User {user.name} logged in at {new Date().toISOString()}
+
+// Output:
+// User john.doe logged in at 2026-03-06T10:30:00.000Z
+```
+
+## Debug Console
+
+Evaluate expressions and execute commands in the context of the paused program:
+
+```javascript
+// Evaluate variables
+> user.name
+"john.doe"
+
+// Call functions
+> calculateTotal(items)
+450.75
+
+// Modify variables (if supported by debugger)
+> count = 0
+0
+```
+
+<Note>
+The Debug Console supports full JavaScript/TypeScript evaluation with access to all variables in the current scope.
+</Note>
+
+## Variables and Watch
+
+### Variables View
+
+Inspect variables in the current scope:
+
+```typescript
+export const CONTEXT_VARIABLES_FOCUSED = new RawContextKey<boolean>(
+  'variablesFocused', 
+  true, 
+  { type: 'boolean', description: 'True when the VARIABLES view is focused' }
+);
+
+export const CONTEXT_VARIABLE_EVALUATE_NAME_PRESENT = new RawContextKey<boolean>(
+  'variableEvaluateNamePresent', 
+  false, 
+  { type: 'boolean', description: "True when the focused variable has an 'evaluateName' field set." }
+);
+```
+
+### Watch Expressions
+
+Add expressions to monitor their values throughout the debug session:
+
+<CodeGroup>
+```javascript Simple Expression
+user.isActive
+```
+
+```javascript Complex Expression
+items.filter(i => i.price > 100).length
+```
+
+```javascript Function Call
+calculateAverage(scores)
+```
+</CodeGroup>
+
+## Call Stack
+
+Navigate through the execution stack to understand the flow of your program:
+
+```typescript
+export const CONTEXT_CALLSTACK_FOCUSED = new RawContextKey<boolean>(
+  'callStackFocused', 
+  true, 
+  { type: 'boolean', description: 'True when the CALLSTACK view is focused' }
+);
+
+export const CONTEXT_CALLSTACK_ITEM_TYPE = new RawContextKey<string>(
+  'callStackItemType', 
+  undefined, 
+  { type: 'string', description: "Represents the item type of the focused element in the CALL STACK view" }
+);
+```
+
+<Tip>
+Click on any stack frame to navigate to that point in the code and inspect variables at that scope.
+</Tip>
+
+## Debug States
+
+The debugger operates in different states:
+
+```typescript
+export const CONTEXT_DEBUG_STATE = new RawContextKey<string>(
+  'debugState', 
+  'inactive', 
+  { 
+    type: 'string', 
+    description: "State that the focused debug session is in. One of: 'inactive', 'initializing', 'stopped', or 'running'"
+  }
+);
+
+export const CONTEXT_IN_DEBUG_MODE = new RawContextKey<boolean>(
+  'inDebugMode', 
+  false, 
+  { type: 'boolean', description: 'True when debugging, false otherwise' }
+);
+```
+
+## Multi-Session Debugging
+
+Debug multiple programs simultaneously:
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Backend",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/backend/server.js"
+    },
+    {
+      "name": "Frontend",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack",
+      "configurations": ["Backend", "Frontend"],
+      "stopAll": true
+    }
+  ]
+}
+```
+
+## Advanced Features
+
+### Step Filtering
+
+Skip stepping through certain code:
+
+```json
+{
+  "skipFiles": [
+    "<node_internals>/**",
+    "${workspaceFolder}/node_modules/**",
+    "${workspaceFolder}/lib/**"
+  ]
+}
+```
+
+### Source Maps
+
+Debug TypeScript, JSX, and other transpiled languages:
+
+```json
+{
+  "sourceMaps": true,
+  "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+  "resolveSourceMapLocations": [
+    "${workspaceFolder}/**",
+    "!**/node_modules/**"
+  ]
+}
+```
+
+### Remote Debugging
+
+Attach to processes running on remote machines or containers:
+
+```json
+{
+  "type": "node",
+  "request": "attach",
+  "name": "Attach to Remote",
+  "address": "192.168.1.100",
+  "port": 9229,
+  "localRoot": "${workspaceFolder}",
+  "remoteRoot": "/app"
+}
+```
+
+## Debugging Best Practices
+
+<Warning>
+Avoid setting breakpoints in frequently executed code paths as this can severely impact performance.
+</Warning>
+
+<Tip>
+Use logpoints instead of console.log() statements to avoid modifying your source code during debugging.
+</Tip>
+
+### Performance Considerations
+
+```typescript
+// The debugger has several optimization contexts:
+export const CONTEXT_STEP_BACK_SUPPORTED = new RawContextKey<boolean>('stepBackSupported', false);
+export const CONTEXT_RESTART_FRAME_SUPPORTED = new RawContextKey<boolean>('restartFrameSupported', false);
+export const CONTEXT_JUMP_TO_CURSOR_SUPPORTED = new RawContextKey<boolean>('jumpToCursorSupported', false);
+```
+
+## Troubleshooting
+
+1. **Breakpoints not hitting**
+   - Verify source maps are configured correctly
+   - Check that `outFiles` glob pattern matches your build output
+   - Ensure the debugger is attached to the correct process
+
+2. **Variables showing "undefined"**
+   - Check that source maps include variable mapping
+   - Verify you're not in an optimized build
+   - Ensure scope is correct
+
+3. **Slow debugging**
+   - Reduce the number of active breakpoints
+   - Use conditional breakpoints to filter hits
+   - Disable unnecessary watch expressions

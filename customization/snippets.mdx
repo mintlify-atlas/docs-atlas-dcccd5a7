@@ -1,0 +1,502 @@
+---
+title: Snippets
+description: Use and create code snippets in VS Code
+---
+
+Snippets are templates that make it easier to enter repeating code patterns. VS Code includes built-in snippets for many languages and supports custom user-defined snippets.
+
+## Using Built-in Snippets
+
+VS Code comes with many built-in snippets for popular languages:
+
+<Steps>
+  <Step title="Start Typing">
+    Begin typing a snippet prefix in your editor. For example, type `for` in a JavaScript file.
+  </Step>
+  
+  <Step title="View Suggestions">
+    IntelliSense will show available snippets. Snippet suggestions are marked with a special icon.
+  </Step>
+  
+  <Step title="Insert Snippet">
+    Press `Tab` or `Enter` to insert the snippet. Use `Tab` to jump between placeholders.
+  </Step>
+</Steps>
+
+### Viewing Available Snippets
+
+To see all available snippets for the current language:
+
+1. Open Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
+2. Type "Insert Snippet"
+3. Browse the list of available snippets
+
+## Built-in Snippet Examples
+
+Here are some built-in snippets from VS Code:
+
+### JavaScript Snippets
+
+<CodeGroup>
+
+```javascript for loop (prefix: for)
+for (let index = 0; index < array.length; index++) {
+	const element = array[index];
+	
+}
+```
+
+```javascript foreach loop (prefix: foreach =>)
+array.forEach(element => {
+	
+});
+```
+
+```javascript class (prefix: class)
+class name {
+	constructor(parameters) {
+		
+	}
+}
+```
+
+```javascript async function (prefix: async function)
+async function name(params) {
+	
+}
+```
+
+</CodeGroup>
+
+### TypeScript Snippets
+
+<CodeGroup>
+
+```typescript property getter (prefix: get)
+public get value() : string {
+	return 
+}
+```
+
+```typescript property setter (prefix: set)
+public set value(v : string) {
+	this. = v;
+}
+```
+
+```typescript full property (prefix: prop)
+private _value : string;
+public get value() : string {
+	return this._value;
+}
+public set value(v : string) {
+	this._value = v;
+}
+```
+
+</CodeGroup>
+
+### HTML Snippets
+
+```html html document (prefix: html or !)
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8" />
+	<title>title</title>
+</head>
+<body>
+	
+</body>
+</html>
+```
+
+## Creating Custom Snippets
+
+You can create your own snippets for any language:
+
+<Steps>
+  <Step title="Open Snippets File">
+    Open Command Palette and type "Configure User Snippets" or "Configure Snippets"
+    
+    Choose:
+    - **New Global Snippets file** - Available in all projects
+    - **New Snippets file for '[Language]'** - Language-specific
+    - **[Language].json** - Edit existing language snippets
+  </Step>
+  
+  <Step title="Define Snippet">
+    Add your snippet definition in JSON format
+  </Step>
+  
+  <Step title="Use Snippet">
+    Start typing the prefix to use your new snippet
+  </Step>
+</Steps>
+
+## Snippet Syntax
+
+Snippets are defined in JSON with the following structure:
+
+```json javascript.json
+{
+  "Snippet Name": {
+    "prefix": "trigger",
+    "body": [
+      "line 1",
+      "line 2"
+    ],
+    "description": "Description shown in IntelliSense"
+  }
+}
+```
+
+### Basic Example
+
+```json javascript.json
+{
+  "Console Log": {
+    "prefix": "log",
+    "body": [
+      "console.log($1);",
+      "$0"
+    ],
+    "description": "Log to the console"
+  }
+}
+```
+
+## Snippet Features
+
+### Tabstops
+
+Tabstops allow you to move the cursor through snippet fields:
+
+```json
+{
+  "For Loop": {
+    "prefix": "for",
+    "body": [
+      "for (let ${1:index} = 0; ${1:index} < ${2:array}.length; ${1:index}++) {",
+      "\tconst ${3:element} = ${2:array}[${1:index}];",
+      "\t$0",
+      "}"
+    ],
+    "description": "For Loop"
+  }
+}
+```
+
+- `$1`, `$2`, `$3` - Tab stops in order
+- `$0` - Final cursor position
+- `${1:index}` - Placeholder with default text
+
+<Note>
+Using the same number (like `${1:index}`) in multiple places will update all occurrences simultaneously as you type.
+</Note>
+
+### Placeholders
+
+Placeholders provide default values:
+
+```json
+{
+  "React Component": {
+    "prefix": "rfc",
+    "body": [
+      "function ${1:ComponentName}() {",
+      "\treturn (",
+      "\t\t<div>",
+      "\t\t\t$0",
+      "\t\t</div>",
+      "\t);",
+      "}",
+      "",
+      "export default ${1:ComponentName};"
+    ],
+    "description": "React functional component"
+  }
+}
+```
+
+### Choice
+
+Provide a dropdown of choices:
+
+```json
+{
+  "Console Method": {
+    "prefix": "cons",
+    "body": [
+      "console.${1|log,warn,error,info|}($2);",
+      "$0"
+    ],
+    "description": "Console with method choice"
+  }
+}
+```
+
+### Variables
+
+Snippets can use predefined variables:
+
+```json
+{
+  "File Header": {
+    "prefix": "header",
+    "body": [
+      "/*",
+      " * File: $TM_FILENAME",
+      " * Project: $TM_DIRECTORY",
+      " * Created: $CURRENT_YEAR-$CURRENT_MONTH-$CURRENT_DATE",
+      " * Author: $1",
+      " */",
+      "$0"
+    ],
+    "description": "File header comment"
+  }
+}
+```
+
+Common variables:
+
+- `$TM_FILENAME` - Current file name
+- `$TM_FILENAME_BASE` - File name without extension
+- `$TM_DIRECTORY` - Current directory
+- `$TM_FILEPATH` - Full file path
+- `$CLIPBOARD` - Clipboard contents
+- `$CURRENT_YEAR` - Current year
+- `$CURRENT_MONTH` - Month as two digits
+- `$CURRENT_DATE` - Day of month
+- `$CURRENT_HOUR` - Hour in 24-hour format
+- `$CURRENT_MINUTE` - Current minute
+- `$CURRENT_SECOND` - Current second
+- `$BLOCK_COMMENT_START` - Language-specific block comment start
+- `$BLOCK_COMMENT_END` - Language-specific block comment end
+- `$LINE_COMMENT` - Language-specific line comment
+
+### Variable Transformations
+
+Transform variable values:
+
+```json
+{
+  "Class from Filename": {
+    "prefix": "class",
+    "body": [
+      "class ${TM_FILENAME_BASE/(.*)/${1:/pascalcase}/} {",
+      "\tconstructor($1) {",
+      "\t\t$0",
+      "\t}",
+      "}"
+    ],
+    "description": "Class named after file"
+  }
+}
+```
+
+## Multi-Language Snippets
+
+Global snippets files (`.code-snippets`) can define snippets for multiple languages:
+
+```json my-snippets.code-snippets
+{
+  "Arrow Function": {
+    "scope": "javascript,typescript,javascriptreact,typescriptreact",
+    "prefix": "af",
+    "body": [
+      "const ${1:functionName} = (${2:params}) => {",
+      "\t$0",
+      "};"
+    ],
+    "description": "Arrow function"
+  }
+}
+```
+
+## Advanced Snippet Examples
+
+### Try-Catch with Error Handling
+
+```json javascript.json
+{
+  "Try-Catch Statement": {
+    "prefix": "trycatch",
+    "body": [
+      "try {",
+      "\t$TM_SELECTED_TEXT$0",
+      "} catch (${1:error}) {",
+      "\tconsole.error(${1:error});",
+      "}"
+    ],
+    "description": "Try-Catch Statement"
+  }
+}
+```
+
+### Async Function with Error Handling
+
+```json javascript.json
+{
+  "Async Function with Try-Catch": {
+    "prefix": "afn",
+    "body": [
+      "async function ${1:functionName}(${2:params}) {",
+      "\ttry {",
+      "\t\t$0",
+      "\t} catch (error) {",
+      "\t\tconsole.error(error);",
+      "\t\tthrow error;",
+      "\t}",
+      "}"
+    ],
+    "description": "Async function with try-catch"
+  }
+}
+```
+
+### React Hook
+
+```json typescriptreact.json
+{
+  "useState Hook": {
+    "prefix": "us",
+    "body": [
+      "const [${1:state}, set${1/(.*)/${1:/capitalize}/}] = useState$3(${2:initialValue});"
+    ],
+    "description": "React useState hook"
+  }
+}
+```
+
+### Test Case
+
+```json typescript.json
+{
+  "Test Case": {
+    "prefix": "test",
+    "body": [
+      "test('${1:test description}', () => {",
+      "\t$0",
+      "});"
+    ],
+    "description": "Test case"
+  }
+}
+```
+
+## File Template Snippets
+
+You can create snippets that are suggested when creating new files:
+
+```json
+{
+  "React Component File": {
+    "prefix": "rfc",
+    "isFileTemplate": true,
+    "body": [
+      "import React from 'react';",
+      "",
+      "interface ${TM_FILENAME_BASE}Props {",
+      "\t$1",
+      "}",
+      "",
+      "export const ${TM_FILENAME_BASE}: React.FC<${TM_FILENAME_BASE}Props> = (props) => {",
+      "\treturn (",
+      "\t\t<div>",
+      "\t\t\t$0",
+      "\t\t</div>",
+      "\t);",
+      "};"
+    ],
+    "description": "React component with TypeScript"
+  }
+}
+```
+
+## Snippet Scope and Include/Exclude
+
+Control where snippets appear:
+
+```json
+{
+  "Test Snippet": {
+    "prefix": "test",
+    "scope": "typescript,javascript",
+    "include": ["**/*.test.ts", "**/*.spec.ts"],
+    "exclude": ["**/node_modules/**"],
+    "body": [
+      "describe('${1:suite}', () => {",
+      "\tit('${2:test}', () => {",
+      "\t\t$0",
+      "\t});",
+      "});"
+    ],
+    "description": "Test suite"
+  }
+}
+```
+
+## Snippet File Locations
+
+- **User Snippets:** 
+  - Windows: `%APPDATA%\Code\User\snippets\`
+  - macOS: `~/Library/Application Support/Code/User/snippets/`
+  - Linux: `~/.config/Code/User/snippets/`
+
+- **Language-Specific:** `[language].json`
+- **Global Snippets:** `*.code-snippets`
+
+<Tip>
+Global snippets files (`.code-snippets`) can include snippets for multiple languages and are great for sharing snippets across your team via version control.
+</Tip>
+
+## Sharing Snippets
+
+To share snippets with your team:
+
+1. Create a `.code-snippets` file in your project's `.vscode` folder
+2. Commit it to version control
+3. Team members will automatically get these snippets when they open the project
+
+```json .vscode/project.code-snippets
+{
+  "Project Header": {
+    "scope": "typescript,javascript",
+    "prefix": "header",
+    "body": [
+      "/**",
+      " * @file $TM_FILENAME",
+      " * @project ${WORKSPACE_NAME}",
+      " * @author $1",
+      " */",
+      "$0"
+    ]
+  }
+}
+```
+
+<Warning>
+Snippets with `TM_SELECTED_TEXT` variable only work when text is selected before triggering the snippet.
+</Warning>
+
+## Troubleshooting
+
+If snippets aren't working:
+
+1. Check that the language scope is correct
+2. Verify JSON syntax is valid (no trailing commas)
+3. Ensure the prefix doesn't conflict with existing snippets
+4. Check that IntelliSense is enabled in settings
+5. Try reloading VS Code window
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Settings" icon="gear" href="./settings">
+    Configure snippet behavior
+  </Card>
+  <Card title="Keybindings" icon="keyboard" href="./keybindings">
+    Add shortcuts for snippet commands
+  </Card>
+</CardGroup>

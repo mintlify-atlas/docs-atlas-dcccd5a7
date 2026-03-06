@@ -1,0 +1,221 @@
+---
+title: Language Support Overview
+description: Understanding how Visual Studio Code provides intelligent language features across different programming languages
+---
+
+Visual Studio Code provides rich language support through a combination of built-in features and extensible language servers. This architecture enables everything from syntax highlighting to intelligent code completion across dozens of programming languages.
+
+## How Language Support Works
+
+VS Code's language support is built on several key components:
+
+<Steps>
+  <Step title="Syntax Highlighting">
+    TextMate grammars provide tokenization and syntax coloring for source code. Each language extension includes a `.tmLanguage.json` file that defines the grammar rules.
+  </Step>
+  
+  <Step title="Language Configuration">
+    Language configuration files define comment styles, bracket pairs, auto-closing behavior, and indentation rules specific to each language.
+  </Step>
+  
+  <Step title="Language Features">
+    Advanced features like IntelliSense, code navigation, and refactoring are powered by language servers following the Language Server Protocol (LSP).
+  </Step>
+  
+  <Step title="Extension API">
+    VS Code exposes a comprehensive Extension API that allows language extensions to register providers for completions, diagnostics, formatting, and more.
+  </Step>
+</Steps>
+
+## Built-in Language Support
+
+VS Code ships with built-in support for the following languages in the `extensions/` directory:
+
+### Programming Languages
+
+<Card title="JavaScript & TypeScript" icon="code">
+  Full-featured support including IntelliSense, debugging, refactoring, and task running. Powered by the TypeScript language service.
+</Card>
+
+<Card title="Python" icon="snake">
+  Syntax highlighting with MagicPython grammar. Enhanced features available through the Python extension.
+</Card>
+
+<Card title="Markdown" icon="file-text">
+  Preview, validation, IntelliSense for links and headers, and integrated notebook rendering.
+</Card>
+
+### Additional Built-in Languages
+
+VS Code includes syntax support for:
+- **Web**: HTML, CSS, SCSS, LESS, JSON, XML
+- **Systems**: C/C++, C#, Java, Go, Rust
+- **Scripting**: Python, Ruby, Perl, Lua, Shell Script, PowerShell, Batch
+- **JVM**: Java, Groovy, Scala
+- **.NET**: C#, F#, VB
+- **Functional**: Clojure, F#
+- **Data**: SQL, YAML, TOML, INI
+- **Markup**: Markdown, LaTeX, reStructuredText
+- **Other**: Dockerfile, Makefile, R, Julia, Swift, Dart
+
+## Language Configuration Structure
+
+Every language extension defines its capabilities through a `package.json` contribution:
+
+```json
+{
+  "contributes": {
+    "languages": [
+      {
+        "id": "javascript",
+        "aliases": ["JavaScript", "javascript", "js"],
+        "extensions": [".js", ".es6", ".mjs", ".cjs"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "javascript",
+        "scopeName": "source.js",
+        "path": "./syntaxes/JavaScript.tmLanguage.json"
+      }
+    ]
+  }
+}
+```
+
+<Note>
+  The `language-configuration.json` file defines language-specific editor behavior like comment styles, bracket matching, and auto-indentation rules.
+</Note>
+
+## Language Features API
+
+Language extensions can provide intelligent features through VS Code's provider API:
+
+| Feature | Provider | Purpose |
+|---------|----------|----------|
+| IntelliSense | `CompletionItemProvider` | Code completion suggestions |
+| Diagnostics | `DiagnosticCollection` | Error and warning reporting |
+| Hover | `HoverProvider` | Type information on hover |
+| Signature Help | `SignatureHelpProvider` | Parameter hints |
+| Go to Definition | `DefinitionProvider` | Navigate to symbol definitions |
+| Find References | `ReferenceProvider` | Find all symbol references |
+| Rename | `RenameProvider` | Intelligent symbol renaming |
+| Formatting | `DocumentFormattingEditProvider` | Code formatting |
+| Code Actions | `CodeActionProvider` | Quick fixes and refactorings |
+
+## Language Server Protocol
+
+Many advanced language features are implemented using the Language Server Protocol (LSP), which separates language analysis from the editor:
+
+```typescript
+// Language server runs in a separate process
+// Communicates with VS Code via JSON-RPC
+const serverOptions: ServerOptions = {
+  run: { module: serverModule, transport: TransportKind.ipc },
+  debug: { module: serverModule, transport: TransportKind.ipc }
+};
+
+const client = new LanguageClient(
+  'languageServerId',
+  'Language Server Name',
+  serverOptions,
+  clientOptions
+);
+```
+
+<Tip>
+  The LSP architecture allows the same language server to be reused across different editors, reducing development effort and improving consistency.
+</Tip>
+
+## Extension Categories
+
+Language extensions in VS Code fall into several categories:
+
+### Basic Language Support
+Provides syntax highlighting and basic editor features through grammar and configuration files. Examples: Batch, Dockerfile, INI.
+
+### Language Features Extensions
+Add intelligent features like IntelliSense and diagnostics. Examples:
+- `typescript-language-features` - JavaScript/TypeScript support
+- `markdown-language-features` - Markdown preview and validation
+- `html-language-features` - HTML IntelliSense
+- `json-language-features` - JSON schema validation
+
+### Debugger Extensions
+Provide debugging capabilities through the Debug Adapter Protocol. Built-in examples:
+- `debug-auto-launch` - Auto-attach Node.js debugging
+- `debug-server-ready` - Open browser when server is ready
+
+## Semantic Tokens
+
+Modern language extensions can provide semantic highlighting that goes beyond syntax-based coloring:
+
+```json
+{
+  "semanticTokenScopes": [
+    {
+      "language": "javascript",
+      "scopes": {
+        "property": ["variable.other.property.js"],
+        "function": ["entity.name.function.js"],
+        "variable.readonly": ["variable.other.constant.object.js"]
+      }
+    }
+  ]
+}
+```
+
+Semantic tokens provide context-aware coloring based on the language's type system rather than just pattern matching.
+
+## Creating Language Support
+
+To add support for a new language:
+
+<Steps>
+  <Step title="Create Language Extension">
+    Use `yo code` to scaffold a new language extension with grammar and configuration files.
+  </Step>
+  
+  <Step title="Define Grammar">
+    Create a TextMate grammar (`.tmLanguage.json`) for syntax highlighting.
+  </Step>
+  
+  <Step title="Configure Language Behavior">
+    Set up `language-configuration.json` with brackets, comments, and auto-closing rules.
+  </Step>
+  
+  <Step title="Add Language Features">
+    Implement providers for IntelliSense, diagnostics, and other features using the Extension API or by creating a language server.
+  </Step>
+</Steps>
+
+## Configuration Defaults
+
+Language extensions can set default editor configurations for their language:
+
+```json
+{
+  "configurationDefaults": {
+    "[javascript]": {
+      "editor.maxTokenizationLineLength": 2500
+    },
+    "[python]": {
+      "diffEditor.ignoreTrimWhitespace": false,
+      "editor.defaultColorDecorators": "never"
+    }
+  }
+}
+```
+
+## Next Steps
+
+Explore detailed documentation for specific languages:
+
+- [JavaScript & TypeScript](/languages/javascript-typescript)
+- [Python](/languages/python)
+- [Markdown](/languages/markdown)
+
+<Note>
+  All built-in language extensions are open source and available in the [VS Code repository](https://github.com/microsoft/vscode) under `extensions/`.
+</Note>

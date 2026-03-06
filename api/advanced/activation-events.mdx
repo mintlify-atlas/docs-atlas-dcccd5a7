@@ -1,0 +1,441 @@
+---
+title: Activation Events
+description: Complete guide to VS Code extension activation events
+---
+
+# Activation Events
+
+Activation events define when your extension should be loaded and activated. VS Code follows a lazy loading model where extensions are only activated when specific conditions are met, ensuring optimal performance.
+
+## Overview
+
+Activation events are declared in your extension's `package.json` file under the `activationEvents` field. When VS Code detects that one of these events has occurred, it loads and calls your extension's `activate()` function.
+
+```json
+{
+  "activationEvents": [
+    "onLanguage:javascript",
+    "onCommand:myExtension.sayHello"
+  ]
+}
+```
+
+## Core Activation Events
+
+### onLanguage
+
+Activates when a file of a specific language is opened.
+
+```json
+{
+  "activationEvents": [
+    "onLanguage:javascript",
+    "onLanguage:typescript",
+    "onLanguage:python"
+  ]
+}
+```
+
+<Accordion title="Real-world example from TypeScript extension">
+```json
+{
+  "activationEvents": [
+    "onLanguage:javascript",
+    "onLanguage:javascriptreact",
+    "onLanguage:typescript",
+    "onLanguage:typescriptreact",
+    "onLanguage:jsx-tags",
+    "onLanguage:jsonc"
+  ]
+}
+```
+The TypeScript language features extension activates for JavaScript, TypeScript, JSX, and JSON with Comments files.
+</Accordion>
+
+<Note>
+Language IDs are case-sensitive and must match the language identifiers defined in VS Code or other extensions.
+</Note>
+
+### onCommand
+
+Activates when a specific command is invoked via the Command Palette, keybinding, or programmatically.
+
+```json
+{
+  "activationEvents": [
+    "onCommand:myExtension.sayHello",
+    "onCommand:myExtension.openSettings"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "myExtension.sayHello",
+        "title": "Say Hello"
+      }
+    ]
+  }
+}
+```
+
+<Warning>
+Commands referenced in `activationEvents` must be declared in the `contributes.commands` section or registered programmatically in your `activate()` function.
+</Warning>
+
+<Accordion title="Real-world example from TypeScript extension">
+```json
+{
+  "activationEvents": [
+    "onCommand:typescript.tsserverRequest",
+    "onCommand:_typescript.configurePlugin",
+    "onCommand:_typescript.learnMoreAboutRefactorings",
+    "onCommand:typescript.fileReferences"
+  ]
+}
+```
+</Accordion>
+
+### onFileSystem
+
+Activates when a file or folder from a specific scheme is accessed.
+
+```json
+{
+  "activationEvents": [
+    "onFileSystem:ssh",
+    "onFileSystem:ftp"
+  ]
+}
+```
+
+<Accordion title="Real-world example from Git extension">
+```json
+{
+  "activationEvents": [
+    "onFileSystem:git",
+    "onFileSystem:git-show"
+  ]
+}
+```
+The Git extension activates when accessing files through the `git` or `git-show` file system schemes, allowing it to provide virtual file content for git operations.
+</Accordion>
+
+### onView
+
+Activates when a specific view is expanded in the VS Code UI.
+
+```json
+{
+  "activationEvents": [
+    "onView:myExtension.explorerView"
+  ],
+  "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "id": "myExtension.explorerView",
+          "name": "My Custom View"
+        }
+      ]
+    }
+  }
+}
+```
+
+### onTaskType
+
+Activates when tasks of a specific type are about to run.
+
+```json
+{
+  "activationEvents": [
+    "onTaskType:npm",
+    "onTaskType:gulp"
+  ]
+}
+```
+
+<Accordion title="Real-world example from TypeScript extension">
+```json
+{
+  "activationEvents": [
+    "onTaskType:typescript"
+  ]
+}
+```
+Activates when TypeScript build or watch tasks are executed.
+</Accordion>
+
+### onDebug
+
+Activates when a debug session is about to start.
+
+```json
+{
+  "activationEvents": [
+    "onDebug"
+  ]
+}
+```
+
+For specific debug types:
+
+```json
+{
+  "activationEvents": [
+    "onDebugResolve:node",
+    "onDebugInitialConfigurations"
+  ]
+}
+```
+
+### onEditSession
+
+Activates when an edit session for a specific scheme is loaded.
+
+```json
+{
+  "activationEvents": [
+    "onEditSession:file"
+  ]
+}
+```
+
+<Accordion title="Real-world example from Git extension">
+```json
+{
+  "activationEvents": [
+    "onEditSession:file"
+  ]
+}
+```
+</Accordion>
+
+### onWalkthrough
+
+Activates when a walkthrough is opened.
+
+```json
+{
+  "activationEvents": [
+    "onWalkthrough:myExtension.gettingStarted"
+  ]
+}
+```
+
+<Accordion title="Real-world example from TypeScript extension">
+```json
+{
+  "activationEvents": [
+    "onWalkthrough:nodejsWelcome"
+  ]
+}
+```
+</Accordion>
+
+### onUri
+
+Activates when a URI with your extension's scheme is opened.
+
+```json
+{
+  "activationEvents": [
+    "onUri"
+  ]
+}
+```
+
+### onWebviewPanel
+
+Activates when a webview of a specific type needs to be restored.
+
+```json
+{
+  "activationEvents": [
+    "onWebviewPanel:myExtension.preview"
+  ]
+}
+```
+
+### onCustomEditor
+
+Activates when a custom editor for a specific view type is opened.
+
+```json
+{
+  "activationEvents": [
+    "onCustomEditor:myExtension.imageEditor"
+  ]
+}
+```
+
+### onAuthenticationRequest
+
+Activates when authentication for a specific provider is requested.
+
+```json
+{
+  "activationEvents": [
+    "onAuthenticationRequest:github"
+  ]
+}
+```
+
+### onRenderer
+
+Activates when a notebook renderer is needed.
+
+```json
+{
+  "activationEvents": [
+    "onRenderer:myExtension.markdownRenderer"
+  ]
+}
+```
+
+### onStartupFinished
+
+Activates after VS Code has fully started, but before the user interacts with the editor.
+
+```json
+{
+  "activationEvents": [
+    "onStartupFinished"
+  ]
+}
+```
+
+<Note>
+This is better than using `*` as it doesn't slow down VS Code startup. Use this when you need to activate early but don't need to be available immediately.
+</Note>
+
+### * (Star - Activate on Startup)
+
+Activates immediately when VS Code starts.
+
+```json
+{
+  "activationEvents": [
+    "*"
+  ]
+}
+```
+
+<Warning>
+Avoid using `*` as it impacts VS Code startup performance. Only use this if absolutely necessary. Consider `onStartupFinished` instead.
+</Warning>
+
+<Accordion title="Real-world example from Git extension">
+```json
+{
+  "activationEvents": [
+    "*",
+    "onEditSession:file",
+    "onFileSystem:git",
+    "onFileSystem:git-show"
+  ]
+}
+```
+The Git extension uses `*` because git repository detection needs to happen immediately on startup.
+</Accordion>
+
+## Best Practices
+
+<Card title="Activation Strategy" icon="lightbulb">
+1. **Be specific**: Use precise activation events rather than broad ones
+2. **Combine events**: Use multiple specific events rather than one general event
+3. **Avoid `*`**: Use `onStartupFinished` if you need early activation
+4. **Test activation**: Verify your extension only activates when needed
+</Card>
+
+### Good Example
+
+```json
+{
+  "activationEvents": [
+    "onLanguage:markdown",
+    "onCommand:markdown.showPreview"
+  ]
+}
+```
+
+### Poor Example
+
+```json
+{
+  "activationEvents": [
+    "*"
+  ]
+}
+```
+
+## Debugging Activation
+
+You can check when your extension activates by adding logging to your `activate()` function:
+
+```typescript
+export function activate(context: vscode.ExtensionContext) {
+  console.log('Extension "my-extension" is now active!');
+  
+  // Your extension code
+}
+```
+
+Use the **Developer: Show Running Extensions** command to see which extensions are activated and their activation times.
+
+## Multiple Activation Events
+
+Extensions typically need multiple activation events. Your extension will activate when **any** of the listed events occur:
+
+```json
+{
+  "activationEvents": [
+    "onLanguage:typescript",
+    "onLanguage:javascript",
+    "onCommand:myExtension.refactor",
+    "onTaskType:typescript"
+  ]
+}
+```
+
+This extension activates when:
+- A TypeScript file is opened OR
+- A JavaScript file is opened OR  
+- The refactor command is invoked OR
+- A TypeScript task runs
+
+## Migration from `workspaceContains`
+
+<Note>
+The `workspaceContains` activation event has been deprecated. Use `onStartupFinished` combined with workspace file detection in your `activate()` function instead.
+</Note>
+
+### Old Pattern (Deprecated)
+
+```json
+{
+  "activationEvents": [
+    "workspaceContains:**/package.json"
+  ]
+}
+```
+
+### New Pattern
+
+```json
+{
+  "activationEvents": [
+    "onStartupFinished"
+  ]
+}
+```
+
+```typescript
+import * as vscode from 'vscode';
+
+export async function activate(context: vscode.ExtensionContext) {
+  const files = await vscode.workspace.findFiles('**/package.json');
+  if (files.length > 0) {
+    // Initialize your extension
+  }
+}
+```

@@ -1,0 +1,547 @@
+---
+title: Extension Anatomy
+description: Understand the structure, lifecycle, and key components of VS Code extensions
+---
+
+# Extension Anatomy
+
+This guide explains the internal structure of a VS Code extension, including the manifest file, activation events, the extension entry point, and contribution points.
+
+## Extension File Structure
+
+A typical VS Code extension has the following structure:
+
+```
+my-extension/
+├── .vscode/
+│   ├── launch.json          # Debugger configuration
+│   └── tasks.json           # Build tasks
+├── src/
+│   └── extension.ts         # Extension source code
+├── out/
+│   └── extension.js         # Compiled JavaScript
+├── package.json             # Extension manifest
+├── tsconfig.json            # TypeScript configuration
+└── README.md                # Extension documentation
+```
+
+## The Extension Manifest (package.json)
+
+The `package.json` file is the extension manifest that describes your extension to VS Code. It contains metadata, contribution points, and activation events.
+
+### Required Fields
+
+```json package.json
+{
+  "name": "my-extension",
+  "displayName": "My Extension",
+  "description": "A brief description of what the extension does",
+  "version": "1.0.0",
+  "publisher": "your-publisher-name",
+  "engines": {
+    "vscode": "^1.70.0"
+  },
+  "categories": [
+    "Other"
+  ]
+}
+```
+
+<Note>
+The `name` must be lowercase and contain no spaces. Use `displayName` for the user-facing name.
+</Note>
+
+### Extension Categories
+
+Choose appropriate categories to help users discover your extension:
+
+- **Programming Languages** - Language support extensions
+- **Snippets** - Code snippet collections
+- **Linters** - Code quality and linting tools
+- **Themes** - Color and icon themes
+- **Debuggers** - Debug adapters
+- **Formatters** - Code formatting tools
+- **Keymaps** - Keyboard shortcut mappings
+- **SCM Providers** - Source control integrations
+- **Testing** - Test runners and frameworks
+- **Data Science** - Notebooks and data tools
+- **Machine Learning** - ML and AI tools
+- **Visualization** - Data visualization
+- **Notebooks** - Notebook support
+- **Other** - Everything else
+
+### Engines Version
+
+The `engines.vscode` field specifies the minimum VS Code version:
+
+```json
+"engines": {
+  "vscode": "^1.70.0"  // Requires VS Code 1.70.0 or higher
+}
+```
+
+<Tip>
+Use the caret (`^`) to indicate compatibility with newer versions. Check the VS Code release notes to see when APIs you use were introduced.
+</Tip>
+
+## Activation Events
+
+Activation events determine when your extension should be loaded. Choose the most specific events to minimize resource usage.
+
+### Common Activation Events
+
+<CodeGroup>
+
+```json On Language
+"activationEvents": [
+  "onLanguage:markdown",
+  "onLanguage:typescript"
+]
+```
+
+```json On Command
+"activationEvents": [
+  "onCommand:myExtension.doSomething"
+]
+```
+
+```json On File Type
+"activationEvents": [
+  "onFileSystem:ftp",
+  "onFileSystem:ssh"
+]
+```
+
+```json On View
+"activationEvents": [
+  "onView:myExtension.treeView"
+]
+```
+
+```json On Startup
+"activationEvents": [
+  "onStartupFinished"
+]
+```
+
+```json Wildcard (Not Recommended)
+"activationEvents": [
+  "*"
+]
+```
+
+</CodeGroup>
+
+### Activation Event Types
+
+| Event | When Activated | Example |
+|-------|---------------|----------|
+| `onLanguage` | When a file of a specific language is opened | `onLanguage:python` |
+| `onCommand` | When a command is invoked | `onCommand:extension.sayHello` |
+| `onDebug` | When a debug session is started | `onDebug` |
+| `onDebugResolve` | Before debug session starts | `onDebugResolve:node` |
+| `onDebugDynamicConfigurations` | When dynamic configurations are needed | `onDebugDynamicConfigurations:node` |
+| `workspaceContains` | When a workspace contains files matching a glob pattern | `workspaceContains:**/.editorconfig` |
+| `onFileSystem` | When a file from a specific scheme is opened | `onFileSystem:sftp` |
+| `onView` | When a view is expanded | `onView:nodeDependencies` |
+| `onUri` | When a URI for your extension is opened | `onUri` |
+| `onWebviewPanel` | When a webview is restored | `onWebviewPanel:catCoding` |
+| `onCustomEditor` | When a custom editor is opened | `onCustomEditor:catCustoms.pawDraw` |
+| `onAuthenticationRequest` | When authentication is requested | `onAuthenticationRequest:github` |
+| `onStartupFinished` | After VS Code starts (lazy activation) | `onStartupFinished` |
+| `*` | On VS Code startup (⚠️ not recommended) | `*` |
+
+<Warning>
+Avoid using the `*` activation event as it loads your extension on startup, which can slow down VS Code. Use specific activation events instead.
+</Warning>
+
+## Extension Entry Point
+
+The `main` field in `package.json` points to your extension's entry point:
+
+```json
+"main": "./out/extension.js"
+```
+
+This file must export two functions: `activate` and `deactivate`.
+
+### The activate Function
+
+```typescript src/extension.ts
+import * as vscode from 'vscode';
+
+export function activate(context: vscode.ExtensionContext) {
+  console.log('Extension activated');
+
+  // Register commands, providers, event listeners, etc.
+  const disposable = vscode.commands.registerCommand(
+    'myExtension.helloWorld',
+    () => {
+      vscode.window.showInformationMessage('Hello World!');
+    }
+  );
+
+  context.subscriptions.push(disposable);
+}
+```
+
+The `activate` function:
+- Is called when your extension is activated (based on activation events)
+- Receives an `ExtensionContext` parameter
+- Should register all commands, providers, and event listeners
+- Should add disposables to `context.subscriptions` for cleanup
+
+### The ExtensionContext
+
+The `ExtensionContext` object provides useful properties and methods:
+
+```typescript
+interface ExtensionContext {
+  // Disposables that will be disposed when extension deactivates
+  subscriptions: { dispose(): any }[];
+
+  // Storage for workspace-specific state
+  workspaceState: Memento;
+
+  // Storage for global state (across workspaces)
+  globalState: Memento & { setKeysForSync(keys: string[]): void };
+
+  // Secure storage for secrets
+  secrets: SecretStorage;
+
+  // Absolute path to the extension directory
+  extensionPath: string;
+
+  // URI of the extension directory
+  extensionUri: Uri;
+
+  // Get absolute path to a resource
+  asAbsolutePath(relativePath: string): string;
+
+  // Storage locations
+  storageUri: Uri | undefined;       // Workspace-specific
+  globalStorageUri: Uri;             // Global
+  logUri: Uri;                       // Log files
+
+  // Extension mode (production, development, or test)
+  extensionMode: ExtensionMode;
+}
+```
+
+### Using State Storage
+
+```typescript
+// Store and retrieve workspace state
+const count = context.workspaceState.get<number>('count', 0);
+await context.workspaceState.update('count', count + 1);
+
+// Store and retrieve global state
+const userName = context.globalState.get<string>('userName');
+await context.globalState.update('userName', 'John Doe');
+
+// Store sensitive data securely
+await context.secrets.store('apiToken', 'secret-token-value');
+const token = await context.secrets.get('apiToken');
+```
+
+<Note>
+Use `workspaceState` for data specific to a workspace and `globalState` for data that should persist across all workspaces.
+</Note>
+
+### The deactivate Function
+
+```typescript
+export function deactivate() {
+  console.log('Extension deactivated');
+  // Clean up resources that aren't in context.subscriptions
+  // Most cleanup is automatic via context.subscriptions
+}
+```
+
+The `deactivate` function:
+- Is called when your extension is deactivated
+- Can return a `Thenable` if it needs to perform async cleanup
+- Is optional - most extensions don't need custom cleanup
+
+<Tip>
+If you add all disposables to `context.subscriptions`, you typically don't need a `deactivate` function.
+</Tip>
+
+## Contribution Points
+
+Contribution points are static declarations in `package.json` that extend VS Code's functionality without code execution.
+
+### Commands
+
+Declare commands that your extension provides:
+
+```json package.json
+"contributes": {
+  "commands": [
+    {
+      "command": "myExtension.helloWorld",
+      "title": "Hello World",
+      "category": "My Extension",
+      "icon": "$(heart)"
+    }
+  ]
+}
+```
+
+Then register the command handler in your code:
+
+```typescript
+vscode.commands.registerCommand('myExtension.helloWorld', () => {
+  vscode.window.showInformationMessage('Hello World!');
+});
+```
+
+### Menus
+
+Add menu items to various parts of the UI:
+
+```json package.json
+"contributes": {
+  "menus": {
+    "commandPalette": [
+      {
+        "command": "myExtension.helloWorld",
+        "when": "editorLangId == markdown"
+      }
+    ],
+    "editor/context": [
+      {
+        "command": "myExtension.helloWorld",
+        "group": "myGroup@1"
+      }
+    ],
+    "editor/title": [
+      {
+        "command": "myExtension.helloWorld",
+        "group": "navigation"
+      }
+    ]
+  }
+}
+```
+
+### Keybindings
+
+Define default keyboard shortcuts:
+
+```json package.json
+"contributes": {
+  "keybindings": [
+    {
+      "command": "myExtension.helloWorld",
+      "key": "ctrl+shift+h",
+      "mac": "cmd+shift+h",
+      "when": "editorTextFocus"
+    }
+  ]
+}
+```
+
+### Configuration
+
+Add settings that users can configure:
+
+```json package.json
+"contributes": {
+  "configuration": {
+    "title": "My Extension",
+    "properties": {
+      "myExtension.enable": {
+        "type": "boolean",
+        "default": true,
+        "description": "Enable My Extension"
+      },
+      "myExtension.maxCount": {
+        "type": "number",
+        "default": 10,
+        "description": "Maximum count"
+      }
+    }
+  }
+}
+```
+
+Access configuration in your code:
+
+```typescript
+const config = vscode.workspace.getConfiguration('myExtension');
+const isEnabled = config.get<boolean>('enable', true);
+const maxCount = config.get<number>('maxCount', 10);
+
+// Update configuration
+await config.update('enable', false, vscode.ConfigurationTarget.Global);
+```
+
+### Languages
+
+Register language configurations:
+
+```json package.json
+"contributes": {
+  "languages": [
+    {
+      "id": "mylang",
+      "extensions": [".mylang"],
+      "aliases": ["MyLang"],
+      "configuration": "./language-configuration.json"
+    }
+  ]
+}
+```
+
+### Grammars
+
+Provide syntax highlighting:
+
+```json package.json
+"contributes": {
+  "grammars": [
+    {
+      "language": "mylang",
+      "scopeName": "source.mylang",
+      "path": "./syntaxes/mylang.tmLanguage.json"
+    }
+  ]
+}
+```
+
+### View Containers and Views
+
+Add custom views to the sidebar:
+
+```json package.json
+"contributes": {
+  "viewsContainers": {
+    "activitybar": [
+      {
+        "id": "myView",
+        "title": "My View",
+        "icon": "resources/icon.svg"
+      }
+    ]
+  },
+  "views": {
+    "myView": [
+      {
+        "id": "myView.tree",
+        "name": "My Tree View"
+      }
+    ]
+  }
+}
+```
+
+## Extension Lifecycle
+
+Understanding the extension lifecycle helps you write efficient extensions:
+
+<Steps>
+
+<Step title="Extension is Installed">
+User installs your extension from the marketplace or VSIX file. The extension is not yet activated.
+</Step>
+
+<Step title="Activation Event Occurs">
+One of your declared activation events occurs (e.g., a command is invoked, a file of a specific language is opened).
+</Step>
+
+<Step title="activate() is Called">
+Your extension's `activate` function is called. This is where you register commands, providers, and event listeners.
+</Step>
+
+<Step title="Extension is Active">
+Your extension is now active and can respond to user actions and events.
+</Step>
+
+<Step title="deactivate() is Called">
+When VS Code shuts down or your extension is disabled, the `deactivate` function is called for cleanup.
+</Step>
+
+</Steps>
+
+<Warning>
+Extensions cannot be deactivated and then reactivated during a VS Code session. Once loaded, an extension stays in memory until VS Code restarts.
+</Warning>
+
+## Best Practices
+
+### Resource Management
+
+<CardGroup cols={2}>
+  <Card title="Add to subscriptions" icon="check">
+    Always add disposables to `context.subscriptions` to prevent memory leaks
+  </Card>
+  <Card title="Use specific activation events" icon="check">
+    Avoid `*` activation - use the most specific events possible
+  </Card>
+  <Card title="Dispose resources" icon="check">
+    Clean up file watchers, webviews, and other resources
+  </Card>
+  <Card title="Lazy load" icon="check">
+    Import heavy dependencies only when needed
+  </Card>
+</CardGroup>
+
+### Performance
+
+```typescript
+// ❌ Bad: Activates extension on startup
+"activationEvents": ["*"]
+
+// ✅ Good: Activates only when needed
+"activationEvents": ["onLanguage:typescript"]
+
+// ❌ Bad: Synchronous heavy operation on activation
+export function activate(context: vscode.ExtensionContext) {
+  heavyComputation(); // Blocks activation
+}
+
+// ✅ Good: Async initialization
+export async function activate(context: vscode.ExtensionContext) {
+  // Quick registration
+  registerCommands(context);
+  
+  // Heavy initialization in background
+  initializeAsync().catch(console.error);
+}
+```
+
+### Error Handling
+
+```typescript
+export function activate(context: vscode.ExtensionContext) {
+  try {
+    const disposable = vscode.commands.registerCommand(
+      'myExtension.risky',
+      async () => {
+        try {
+          await riskyOperation();
+        } catch (error) {
+          vscode.window.showErrorMessage(
+            `Operation failed: ${error.message}`
+          );
+        }
+      }
+    );
+    context.subscriptions.push(disposable);
+  } catch (error) {
+    console.error('Failed to activate extension:', error);
+  }
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Overview" href="./overview">
+    Explore the complete VS Code Extension API
+  </Card>
+  <Card title="Your First Extension" href="./your-first-extension">
+    Build your first extension step by step
+  </Card>
+</CardGroup>

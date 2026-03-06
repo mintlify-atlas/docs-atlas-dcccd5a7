@@ -1,0 +1,374 @@
+---
+title: "Extensions API"
+description: "Manage and interact with other extensions"
+---
+
+## Overview
+
+The `vscode.extensions` namespace provides access to information about installed extensions and allows extensions to interact with each other.
+
+## Extension Information
+
+### all
+
+Get all installed extensions.
+
+```typescript
+const all: readonly Extension<any>[]
+```
+
+**Example:**
+
+```typescript
+import * as vscode from 'vscode';
+
+const allExtensions = vscode.extensions.all;
+console.log(`Total extensions: ${allExtensions.length}`);
+
+allExtensions.forEach(ext => {
+  console.log(`${ext.id} - ${ext.packageJSON.displayName}`);
+});
+```
+
+### getExtension
+
+Get a specific extension by ID.
+
+```typescript
+function getExtension(
+  extensionId: string
+): Extension<any> | undefined
+
+function getExtension<T>(
+  extensionId: string
+): Extension<T> | undefined
+```
+
+<ParamField path="extensionId" type="string" required>
+  The extension ID in the format `publisher.name`
+</ParamField>
+
+**Example:**
+
+```typescript
+const gitExtension = vscode.extensions.getExtension('vscode.git');
+if (gitExtension) {
+  console.log(`Git extension version: ${gitExtension.packageJSON.version}`);
+}
+
+// With type parameter
+interface GitAPI {
+  getRepositories(): Repository[];
+}
+
+const typedGitExt = vscode.extensions.getExtension<GitAPI>('vscode.git');
+if (typedGitExt?.isActive) {
+  const api = typedGitExt.exports;
+  const repos = api.getRepositories();
+}
+```
+
+## Extension Object
+
+The `Extension<T>` interface provides information about an extension:
+
+```typescript
+interface Extension<T> {
+  // Extension identifier (publisher.name)
+  readonly id: string;
+  
+  // Absolute path to extension directory
+  readonly extensionUri: Uri;
+  readonly extensionPath: string;
+  
+  // Is extension active?
+  readonly isActive: boolean;
+  
+  // Extension's package.json
+  readonly packageJSON: any;
+  
+  // Extension kind (UI or Workspace)
+  readonly extensionKind: ExtensionKind;
+  
+  // Exported API (if any)
+  readonly exports: T;
+  
+  // Activate the extension
+  activate(): Thenable<T>;
+}
+```
+
+## Extension Communication
+
+Extensions can export APIs for other extensions to use.
+
+### Exporting an API
+
+**In your extension:**
+
+```typescript extension.ts
+// Define your API interface
+export interface MyExtensionAPI {
+  getData(): Promise<string[]>;
+  performAction(data: any): void;
+}
+
+// Implement the API
+class MyExtensionAPIImpl implements MyExtensionAPI {
+  async getData(): Promise<string[]> {
+    return ['data1', 'data2', 'data3'];
+  }
+  
+  performAction(data: any): void {
+    console.log('Action performed:', data);
+  }
+}
+
+// Export the API from activate function
+export function activate(context: vscode.ExtensionContext): MyExtensionAPI {
+  const api = new MyExtensionAPIImpl();
+  
+  // Your extension setup...
+  
+  return api; // This becomes the extension's exports
+}
+```
+
+### Consuming an API
+
+**In another extension:**
+
+```typescript
+import * as vscode from 'vscode';
+
+interface MyExtensionAPI {
+  getData(): Promise<string[]>;
+  performAction(data: any): void;
+}
+
+const ext = vscode.extensions.getExtension<MyExtensionAPI>(
+  'publisher.my-extension'
+);
+
+if (ext) {
+  if (!ext.isActive) {
+    await ext.activate();
+  }
+  
+  const api = ext.exports;
+  const data = await api.getData();
+  api.performAction({ type: 'test' });
+}
+```
+
+## Extension Events
+
+### onDidChange
+
+Event fired when extensions are installed, uninstalled, enabled, or disabled.
+
+```typescript
+const onDidChange: Event<void>
+```
+
+**Example:**
+
+```typescript
+vscode.extensions.onDidChange(() => {
+  console.log('Extensions changed');
+  
+  // Check for required extension
+  const required = vscode.extensions.getExtension('required.extension');
+  if (!required) {
+    vscode.window.showWarningMessage(
+      'Required extension is not installed'
+    );
+  }
+});
+```
+
+## Extension Kinds
+
+Extensions can run in different environments:
+
+```typescript
+enum ExtensionKind {
+  // Runs on the UI side (local machine)
+  UI = 1,
+  
+  // Runs in the workspace (remote or local)
+  Workspace = 2
+}
+```
+
+**Example:**
+
+```typescript
+const ext = vscode.extensions.getExtension('some.extension');
+if (ext) {
+  if (ext.extensionKind === vscode.ExtensionKind.UI) {
+    console.log('This extension runs in the UI');
+  } else if (ext.extensionKind === vscode.ExtensionKind.Workspace) {
+    console.log('This extension runs in the workspace');
+  }
+}
+```
+
+## Common Use Cases
+
+### Check for Extension Dependencies
+
+```typescript
+export function activate(context: vscode.ExtensionContext) {
+  const pythonExt = vscode.extensions.getExtension('ms-python.python');
+  
+  if (!pythonExt) {
+    vscode.window.showErrorMessage(
+      'This extension requires the Python extension',
+      'Install'
+    ).then(selection => {
+      if (selection === 'Install') {
+        vscode.commands.executeCommand(
+          'workbench.extensions.installExtension',
+          'ms-python.python'
+        );
+      }
+    });
+    return;
+  }
+  
+  // Rest of activation...
+}
+```
+
+### Wait for Extension to Activate
+
+```typescript
+async function getGitAPI() {
+  const gitExtension = vscode.extensions.getExtension('vscode.git');
+  
+  if (!gitExtension) {
+    throw new Error('Git extension not found');
+  }
+  
+  if (!gitExtension.isActive) {
+    await gitExtension.activate();
+  }
+  
+  return gitExtension.exports;
+}
+```
+
+### List Extensions by Publisher
+
+```typescript
+function getExtensionsByPublisher(publisher: string) {
+  return vscode.extensions.all.filter(ext => 
+    ext.id.startsWith(`${publisher}.`)
+  );
+}
+
+const microsoftExts = getExtensionsByPublisher('ms-vscode');
+console.log(`Microsoft extensions: ${microsoftExts.length}`);
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Check Activation" icon="check">
+    Always check if an extension is active before accessing its exports
+  </Card>
+  <Card title="Version Your API" icon="code-branch">
+    Include version information in your exported API for compatibility
+  </Card>
+  <Card title="Handle Missing Extensions" icon="triangle-exclamation">
+    Gracefully handle cases where required extensions are not installed
+  </Card>
+  <Card title="Document Your API" icon="book">
+    Provide clear TypeScript types and documentation for your exported API
+  </Card>
+</CardGroup>
+
+## Real-World Example
+
+Here's a complete example of two extensions communicating:
+
+```typescript Data Provider Extension
+// publisher.data-provider extension
+
+export interface DataAPI {
+  version: string;
+  getProjects(): Promise<Project[]>;
+  onProjectsChanged: vscode.Event<void>;
+}
+
+interface Project {
+  name: string;
+  path: string;
+}
+
+class DataProvider implements DataAPI {
+  version = '1.0.0';
+  private _onProjectsChanged = new vscode.EventEmitter<void>();
+  readonly onProjectsChanged = this._onProjectsChanged.event;
+  
+  async getProjects(): Promise<Project[]> {
+    // Implementation
+    return [];
+  }
+}
+
+export function activate(context: vscode.ExtensionContext): DataAPI {
+  return new DataProvider();
+}
+```
+
+```typescript Consumer Extension
+// publisher.data-consumer extension
+
+import * as vscode from 'vscode';
+
+interface DataAPI {
+  version: string;
+  getProjects(): Promise<Project[]>;
+  onProjectsChanged: vscode.Event<void>;
+}
+
+export async function activate(context: vscode.ExtensionContext) {
+  const dataExt = vscode.extensions.getExtension<DataAPI>(
+    'publisher.data-provider'
+  );
+  
+  if (!dataExt) {
+    vscode.window.showErrorMessage('Data Provider extension is required');
+    return;
+  }
+  
+  const api = dataExt.isActive ? dataExt.exports : await dataExt.activate();
+  
+  console.log(`Using Data API version ${api.version}`);
+  
+  // Listen to changes
+  context.subscriptions.push(
+    api.onProjectsChanged(async () => {
+      const projects = await api.getProjects();
+      console.log(`Projects updated: ${projects.length}`);
+    })
+  );
+  
+  // Get initial data
+  const projects = await api.getProjects();
+  console.log(`Loaded ${projects.length} projects`);
+}
+```
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="Extension Anatomy" icon="book" href="/api/extension-anatomy">
+    Learn about extension structure and lifecycle
+  </Card>
+  <Card title="Publishing" icon="upload" href="/extensions/publishing">
+    Publish your extension to the marketplace
+  </Card>
+</CardGroup>

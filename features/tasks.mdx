@@ -1,0 +1,595 @@
+---
+title: Tasks
+description: Automate build, test, and deployment workflows with configurable tasks
+---
+
+## Overview
+
+Tasks in Visual Studio Code allow you to automate common workflows like building, testing, and deploying your code. Tasks can run shell commands, scripts, and integrate with build tools like Make, Gulp, or npm scripts.
+
+## Getting Started
+
+<Steps>
+  <Step title="Access Tasks">
+    Press `Ctrl+Shift+P` (Windows/Linux) or `Cmd+Shift+P` (macOS) and type "Tasks"
+  </Step>
+  <Step title="Configure Task">
+    Select "Tasks: Configure Task" to create a `tasks.json` file
+  </Step>
+  <Step title="Run Task">
+    Press `Ctrl+Shift+B` (Windows/Linux) or `Cmd+Shift+B` (macOS) to run the default build task
+  </Step>
+</Steps>
+
+## Task Configuration
+
+Tasks are defined in `.vscode/tasks.json`:
+
+```json
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build Project",
+      "type": "shell",
+      "command": "npm run build",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$tsc"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    }
+  ]
+}
+```
+
+## Task Types
+
+### Shell Tasks
+
+Run shell commands:
+
+```typescript
+// From VS Code source: src/vs/workbench/contrib/tasks/common/tasks.ts
+export enum ShellQuoting {
+  Escape = 1,  // Use character escaping
+  Strong = 2,  // Use strong quoting
+  Weak = 3,    // Use weak quoting
+}
+
+export interface IShellConfiguration {
+  executable?: string;
+  args?: string[];
+  quoting?: IShellQuotingOptions;
+}
+```
+
+<CodeGroup>
+```json Simple Shell Command
+{
+  "label": "Echo",
+  "type": "shell",
+  "command": "echo Hello World"
+}
+```
+
+```json Command with Arguments
+{
+  "label": "Compile TypeScript",
+  "type": "shell",
+  "command": "tsc",
+  "args": ["-p", "tsconfig.json"]
+}
+```
+
+```json Custom Shell
+{
+  "label": "Run Script",
+  "type": "shell",
+  "command": "./build.sh",
+  "options": {
+    "shell": {
+      "executable": "/bin/bash",
+      "args": ["-l"]
+    }
+  }
+}
+```
+</CodeGroup>
+
+### Process Tasks
+
+Run processes directly without a shell:
+
+```json
+{
+  "label": "Run Node",
+  "type": "process",
+  "command": "node",
+  "args": ["${workspaceFolder}/app.js"],
+  "options": {
+    "cwd": "${workspaceFolder}"
+  }
+}
+```
+
+## Real Examples from VS Code
+
+Here are actual task configurations from the VS Code source repository:
+
+### Build Task with Problem Matcher
+
+```json
+{
+  "type": "npm",
+  "script": "watch-client-transpiled",
+  "label": "Core - Transpile",
+  "isBackground": true,
+  "presentation": {
+    "reveal": "never",
+    "group": "buildWatchers",
+    "close": false
+  },
+  "problemMatcher": {
+    "owner": "esbuild",
+    "applyTo": "closedDocuments",
+    "fileLocation": ["relative", "${workspaceFolder}/src"],
+    "pattern": {
+      "regexp": "^(.+?):(\\d+):(\\d+): ERROR: (.+)$",
+      "file": 1,
+      "line": 2,
+      "column": 3,
+      "message": 4
+    },
+    "background": {
+      "beginsPattern": "Starting transpilation\\.\\.\\.",
+      "endsPattern": "Finished transpilation with"
+    }
+  }
+}
+```
+
+### Composite Task
+
+```json
+{
+  "label": "VS Code - Build",
+  "dependsOn": [
+    "Core - Transpile",
+    "Core - Typecheck",
+    "Ext - Build"
+  ],
+  "group": {
+    "kind": "build",
+    "isDefault": true
+  },
+  "problemMatcher": []
+}
+```
+
+### Background Task for Development
+
+```json
+{
+  "type": "shell",
+  "command": "./scripts/code-server.sh",
+  "args": ["--no-launch", "--port", "8080"],
+  "label": "Run code server",
+  "isBackground": true,
+  "problemMatcher": {
+    "pattern": {"regexp": ""},
+    "background": {
+      "beginsPattern": ".*node .*",
+      "endsPattern": "Web UI available at .*"
+    }
+  },
+  "presentation": {
+    "reveal": "never"
+  }
+}
+```
+
+## Task Properties
+
+### Essential Properties
+
+```typescript
+export interface ITaskIdentifier {
+  type: string;  // Task type (shell, process, npm, etc.)
+}
+
+export const CUSTOMIZED_TASK_TYPE = '$customized';
+```
+
+| Property | Description | Required |
+|----------|-------------|----------|
+| `label` | Task name displayed in UI | Yes |
+| `type` | Task type (shell, process, npm) | Yes |
+| `command` | Command to execute | Yes |
+| `args` | Command arguments | No |
+| `group` | Task group (build, test) | No |
+| `problemMatcher` | Error pattern matcher | No |
+| `presentation` | Terminal presentation options | No |
+
+### Task Groups
+
+Organize tasks into groups:
+
+<Card title="Task Groups" icon="layer-group">
+- **build**: Build tasks (default: `Ctrl+Shift+B` / `Cmd+Shift+B`)
+- **test**: Test tasks
+- **none**: No group
+- **custom**: User-defined groups
+</Card>
+
+```json
+{
+  "group": {
+    "kind": "build",
+    "isDefault": true
+  }
+}
+```
+
+## Problem Matchers
+
+Problem matchers parse output to detect errors and warnings:
+
+```json
+{
+  "problemMatcher": {
+    "owner": "typescript",
+    "fileLocation": ["absolute"],
+    "pattern": {
+      "regexp": "Error: ([^(]+)\\((\\d+|\\d+,\\d+|\\d+,\\d+,\\d+,\\d+)\\): (.*)$",
+      "file": 1,
+      "location": 2,
+      "message": 3
+    }
+  }
+}
+```
+
+### Built-in Problem Matchers
+
+<CodeGroup>
+```json TypeScript
+{
+  "problemMatcher": "$tsc"
+}
+```
+
+```json ESLint
+{
+  "problemMatcher": "$eslint-compact"
+}
+```
+
+```json Go
+{
+  "problemMatcher": "$go"
+}
+```
+
+```json Rust
+{
+  "problemMatcher": "$rustc"
+}
+```
+</CodeGroup>
+
+### Background Tasks
+
+For watch mode and long-running tasks:
+
+```json
+{
+  "problemMatcher": {
+    "owner": "typescript",
+    "fileLocation": "absolute",
+    "pattern": {
+      "regexp": "Error: ([^(]+)\\((\\d+,\\d+)\\): (.*)$",
+      "file": 1,
+      "location": 2,
+      "message": 3
+    },
+    "background": {
+      "activeOnStart": true,
+      "beginsPattern": "Starting compilation",
+      "endsPattern": "Finished compilation"
+    }
+  }
+}
+```
+
+## Task Variables
+
+Use variables for flexible task definitions:
+
+| Variable | Description |
+|----------|-------------|
+| `${workspaceFolder}` | Workspace root path |
+| `${workspaceFolderBasename}` | Workspace folder name |
+| `${file}` | Current opened file |
+| `${fileBasename}` | Current file name |
+| `${fileDirname}` | Current file directory |
+| `${fileExtname}` | Current file extension |
+| `${cwd}` | Current working directory |
+| `${env:VAR}` | Environment variable |
+| `${config:setting}` | VS Code setting value |
+
+```json
+{
+  "label": "Build Current File",
+  "type": "shell",
+  "command": "gcc",
+  "args": [
+    "-o",
+    "${fileDirname}/${fileBasenameNoExtension}",
+    "${file}"
+  ]
+}
+```
+
+## Task Dependencies
+
+Run tasks in sequence or parallel:
+
+```json
+{
+  "label": "Build All",
+  "dependsOn": ["Clean", "Compile", "Package"],
+  "dependsOrder": "sequence"
+}
+```
+
+<Note>
+Use `dependsOrder: "parallel"` to run dependent tasks simultaneously for faster builds.
+</Note>
+
+## Presentation Options
+
+Control how task output is displayed:
+
+```json
+{
+  "presentation": {
+    "echo": true,
+    "reveal": "always",
+    "focus": false,
+    "panel": "shared",
+    "showReuseMessage": true,
+    "clear": false,
+    "group": "build"
+  }
+}
+```
+
+### Presentation Properties
+
+| Property | Values | Description |
+|----------|--------|-------------|
+| `reveal` | `always`, `never`, `silent` | When to show terminal |
+| `panel` | `shared`, `dedicated`, `new` | Terminal reuse |
+| `focus` | `true`, `false` | Focus terminal on run |
+| `clear` | `true`, `false` | Clear before running |
+| `group` | string | Group related tasks |
+
+## Task Context Keys
+
+```typescript
+export const TASK_RUNNING_STATE = new RawContextKey<boolean>(
+  'taskRunning', 
+  false, 
+  'Whether a task is currently running'
+);
+
+export const TASK_TERMINAL_ACTIVE = new RawContextKey<boolean>(
+  'taskTerminalActive', 
+  false, 
+  'Whether the active terminal is a task terminal'
+);
+```
+
+## Running Tasks
+
+### Command Palette
+
+- `Tasks: Run Task` - Select and run any task
+- `Tasks: Run Build Task` - Run default build task (`Ctrl+Shift+B` / `Cmd+Shift+B`)
+- `Tasks: Run Test Task` - Run test tasks
+- `Tasks: Rerun Last Task` - Run the last executed task
+- `Tasks: Terminate Task` - Stop running task
+
+### Keyboard Shortcuts
+
+| Action | Windows/Linux | macOS |
+|--------|---------------|-------|
+| Run Build Task | `Ctrl+Shift+B` | `Cmd+Shift+B` |
+| Run Task | `Ctrl+Shift+P` > Tasks | `Cmd+Shift+P` > Tasks |
+
+<Tip>
+Bind frequently used tasks to custom keyboard shortcuts in `keybindings.json`.
+</Tip>
+
+## Task Output Scanning
+
+Monitor task output for specific patterns:
+
+```typescript
+export interface ITerminalExitReason {
+  code: number | undefined;
+  signal: string | undefined;
+}
+```
+
+## Auto-detected Tasks
+
+VS Code automatically detects tasks from:
+
+<Card title="Auto-detected Task Sources" icon="wand-magic-sparkles">
+- **npm scripts** in `package.json`
+- **Gulp tasks** in `gulpfile.js`
+- **Grunt tasks** in `Gruntfile.js`
+- **Jake tasks** in `Jakefile`
+- **Make targets** in `Makefile`
+</Card>
+
+```json
+{
+  "typescript.tsc.autoDetect": "on",
+  "gulp.autoDetect": "on",
+  "grunt.autoDetect": "on",
+  "npm.autoDetect": "on"
+}
+```
+
+## Task Execution
+
+### Options
+
+Configure execution environment:
+
+```json
+{
+  "label": "Custom Environment",
+  "type": "shell",
+  "command": "node script.js",
+  "options": {
+    "cwd": "${workspaceFolder}/src",
+    "env": {
+      "NODE_ENV": "production",
+      "API_KEY": "${env:API_KEY}"
+    },
+    "shell": {
+      "executable": "/bin/bash",
+      "args": ["-l"]
+    }
+  }
+}
+```
+
+### Shell Quoting
+
+```typescript
+export interface IShellQuotingOptions {
+  escape?: string | {
+    escapeChar: string;
+    charsToEscape: string;
+  };
+  strong?: string;
+  weak?: string;
+}
+```
+
+## Advanced Features
+
+### Input Variables
+
+Prompt for user input:
+
+```json
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Deploy",
+      "type": "shell",
+      "command": "deploy",
+      "args": ["${input:environment}"]
+    }
+  ],
+  "inputs": [
+    {
+      "id": "environment",
+      "type": "pickString",
+      "description": "Select deployment environment",
+      "options": ["development", "staging", "production"],
+      "default": "development"
+    }
+  ]
+}
+```
+
+### Compound Tasks
+
+Run multiple tasks together:
+
+```json
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Client Build",
+      "command": "npm run build:client",
+      "type": "shell"
+    },
+    {
+      "label": "Server Build",
+      "command": "npm run build:server",
+      "type": "shell"
+    },
+    {
+      "label": "Full Build",
+      "dependsOn": ["Client Build", "Server Build"],
+      "dependsOrder": "parallel",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}
+```
+
+## Best Practices
+
+<Tip>
+Use background tasks for watch mode commands that continue running. This allows you to run other tasks without interruption.
+</Tip>
+
+<Warning>
+Avoid using task labels that conflict with auto-detected tasks. Use unique, descriptive names.
+</Warning>
+
+### Task Organization
+
+1. Group related tasks using presentation groups
+2. Use clear, descriptive labels
+3. Set appropriate problem matchers
+4. Configure keyboard shortcuts for frequent tasks
+5. Document complex tasks with comments (using `"detail"` property)
+
+```json
+{
+  "label": "Deploy to Production",
+  "detail": "Builds, tests, and deploys to production server",
+  "type": "shell",
+  "command": "npm run deploy"
+}
+```
+
+## Troubleshooting
+
+1. **Task not running**
+   - Check task syntax in `tasks.json`
+   - Verify command is in PATH
+   - Check working directory
+
+2. **Problem matcher not working**
+   - Verify regex pattern matches output
+   - Check file location settings
+   - Test with built-in matchers first
+
+3. **Output not showing**
+   - Check `presentation.reveal` setting
+   - Verify terminal is not hidden
+   - Look in "Problems" panel for parsed errors
+
+<Note>
+Use `"tasks.verboseLogging": true` in settings to enable detailed task execution logs.
+</Note>

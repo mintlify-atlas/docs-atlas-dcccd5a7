@@ -1,0 +1,509 @@
+---
+title: Publishing Extensions
+description: Package and publish your VS Code extension to the marketplace
+---
+
+## Prerequisites
+
+Before publishing, you need:
+
+- A completed extension ready for release
+- An [Azure DevOps](https://dev.azure.com) account
+- A Personal Access Token (PAT) with marketplace permissions
+- The `vsce` (Visual Studio Code Extension Manager) CLI tool
+
+## Installing vsce
+
+Install the Visual Studio Code Extension Manager globally:
+
+```bash
+npm install -g @vscode/vsce
+```
+
+<Note>
+`vsce` is the official tool for packaging and publishing VS Code extensions. It validates your extension and handles marketplace uploads.
+</Note>
+
+## Creating a Publisher
+
+<Steps>
+  <Step title="Create Azure DevOps Account">
+    Sign up at [dev.azure.com](https://dev.azure.com) if you don't have an account
+  </Step>
+  
+  <Step title="Create Personal Access Token">
+    1. Go to Azure DevOps → User Settings → Personal Access Tokens
+    2. Click "New Token"
+    3. Name it (e.g., "VS Code Marketplace")
+    4. Set Organization to "All accessible organizations"
+    5. Set Scopes to "Marketplace (Manage)"
+    6. Click "Create" and **save the token securely**
+  </Step>
+  
+  <Step title="Create Publisher">
+    Visit the [Visual Studio Marketplace Publisher Management](https://marketplace.visualstudio.com/manage) page:
+    
+    1. Click "Create publisher"
+    2. Enter a unique ID (lowercase, no spaces)
+    3. Add a display name and description
+    4. Click "Create"
+  </Step>
+  
+  <Step title="Login with vsce">
+    Authenticate using your Personal Access Token:
+    
+    ```bash
+    vsce login <publisher-name>
+    ```
+    
+    Enter your PAT when prompted
+  </Step>
+</Steps>
+
+<Warning>
+Keep your Personal Access Token secure! Never commit it to version control or share it publicly.
+</Warning>
+
+## Preparing for Publication
+
+### Update package.json
+
+Ensure your manifest has all required fields:
+
+```json package.json
+{
+  "name": "my-extension",
+  "displayName": "My Extension",
+  "description": "A helpful extension that does amazing things",
+  "version": "1.0.0",
+  "publisher": "your-publisher-name",
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/my-extension"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/my-extension/issues"
+  },
+  "homepage": "https://github.com/yourusername/my-extension#readme",
+  "engines": {
+    "vscode": "^1.70.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "productivity",
+    "tools"
+  ],
+  "icon": "images/icon.png"
+}
+```
+
+### Key Metadata Fields
+
+- **publisher** - Your publisher ID (required)
+- **version** - Follow [semantic versioning](https://semver.org/)
+- **description** - Clear, concise explanation (shown in search results)
+- **repository** - Link to source code
+- **icon** - 128x128 PNG image for marketplace listing
+- **categories** - Help users discover your extension
+- **keywords** - Improve searchability
+- **license** - Specify your license (MIT, Apache-2.0, etc.)
+
+### Create a README
+
+A comprehensive README.md is essential:
+
+````markdown README.md
+# My Extension
+
+Brief description of what your extension does.
+
+## Features
+
+- Feature 1: Description and screenshot
+- Feature 2: Description and screenshot  
+- Feature 3: Description and screenshot
+
+![Feature Screenshot](images/screenshot.png)
+
+## Requirements
+
+List any dependencies or prerequisites:
+- Node.js 18+
+- Python 3.x (if applicable)
+
+## Extension Settings
+
+This extension contributes the following settings:
+
+* `myextension.enable`: Enable/disable this extension
+* `myextension.option`: Configure specific behavior
+
+## Usage
+
+How to use your extension:
+
+1. Step one
+2. Step two
+3. Step three
+
+## Known Issues
+
+List known issues or limitations.
+
+## Release Notes
+
+### 1.0.0
+
+Initial release with core features.
+
+## License
+
+MIT
+````
+
+### Add CHANGELOG
+
+Document version history in CHANGELOG.md:
+
+```markdown CHANGELOG.md
+# Change Log
+
+All notable changes to the "my-extension" extension will be documented in this file.
+
+## [1.0.0] - 2026-03-06
+
+### Added
+- Initial release
+- Feature A implementation
+- Feature B implementation
+
+### Fixed
+- Bug fix details
+
+### Changed
+- Improvement details
+```
+
+### Add Extension Icon
+
+Create a 128x128 PNG icon and reference it in package.json:
+
+```json
+{
+  "icon": "images/icon.png"
+}
+```
+
+<Tip>
+Use a simple, recognizable design. The icon appears in search results and the Extensions view.
+</Tip>
+
+### Exclude Unnecessary Files
+
+Create `.vscodeignore` to exclude files from the package (based on VS Code's built-in extensions):
+
+```text .vscodeignore
+.vscode/**
+.vscode-test/**
+src/**
+out/test/**
+.gitignore
+.eslintrc.json
+**/*.map
+**/*.ts
+**/tsconfig.json
+node_modules/**
+.github/**
+*.vsix
+```
+
+<Note>
+Smaller packages install faster. Exclude source files, tests, and development dependencies.
+</Note>
+
+## Packaging Your Extension
+
+### Build for Production
+
+If using esbuild (recommended, like VS Code's built-in extensions):
+
+<Steps>
+  <Step title="Install esbuild">
+    ```bash
+    npm install --save-dev esbuild
+    ```
+  </Step>
+  
+  <Step title="Create Build Script">
+    Create esbuild.mts:
+    
+    ```typescript esbuild.mts
+    import * as esbuild from 'esbuild';
+    
+    await esbuild.build({
+      entryPoints: ['src/extension.ts'],
+      bundle: true,
+      outfile: 'dist/extension.js',
+      external: ['vscode'],
+      format: 'cjs',
+      platform: 'node',
+      minify: true,
+      sourcemap: false
+    });
+    ```
+  </Step>
+  
+  <Step title="Add Build Script">
+    Update package.json:
+    
+    ```json
+    {
+      "scripts": {
+        "compile": "tsc -p ./",
+        "bundle": "node esbuild.mts",
+        "vscode:prepublish": "npm run bundle"
+      },
+      "main": "./dist/extension.js"
+    }
+    ```
+  </Step>
+  
+  <Step title="Test Bundled Extension">
+    Build and test:
+    
+    ```bash
+    npm run bundle
+    # Press F5 to test
+    ```
+  </Step>
+</Steps>
+
+### Create VSIX Package
+
+Package your extension into a `.vsix` file:
+
+```bash
+vsce package
+```
+
+This creates `my-extension-1.0.0.vsix`.
+
+<Tip>
+Test the packaged extension before publishing:
+
+```bash
+code --install-extension my-extension-1.0.0.vsix
+```
+</Tip>
+
+### Validate Package
+
+`vsce` automatically validates:
+- All required fields in package.json
+- Icon file exists and is correct size
+- README.md exists
+- LICENSE file exists (if license specified)
+
+Fix any validation errors before publishing.
+
+## Publishing to Marketplace
+
+<Steps>
+  <Step title="Verify Everything">
+    - Test all features thoroughly
+    - Review README and CHANGELOG
+    - Check version number
+    - Ensure icon displays correctly
+  </Step>
+  
+  <Step title="Publish Extension">
+    ```bash
+    vsce publish
+    ```
+    
+    Or publish a specific version:
+    
+    ```bash
+    vsce publish major  # 1.0.0 -> 2.0.0
+    vsce publish minor  # 1.0.0 -> 1.1.0  
+    vsce publish patch  # 1.0.0 -> 1.0.1
+    ```
+  </Step>
+  
+  <Step title="Verify Publication">
+    Visit the marketplace:
+    
+    ```
+    https://marketplace.visualstudio.com/items?itemName=<publisher>.<extension>
+    ```
+    
+    Check that all information displays correctly
+  </Step>
+</Steps>
+
+<Warning>
+Publishing is immediate and public. Double-check everything before publishing.
+</Warning>
+
+## Updating Extensions
+
+<Steps>
+  <Step title="Update Version">
+    Increment version in package.json following semver:
+    
+    - **Major** (1.0.0 → 2.0.0): Breaking changes
+    - **Minor** (1.0.0 → 1.1.0): New features, backwards-compatible
+    - **Patch** (1.0.0 → 1.0.1): Bug fixes
+  </Step>
+  
+  <Step title="Update CHANGELOG">
+    Document changes in CHANGELOG.md:
+    
+    ```markdown
+    ## [1.1.0] - 2026-03-15
+    
+    ### Added
+    - New feature description
+    
+    ### Fixed
+    - Bug fix description
+    ```
+  </Step>
+  
+  <Step title="Publish Update">
+    ```bash
+    vsce publish
+    ```
+  </Step>
+</Steps>
+
+Users with auto-update enabled receive the update automatically.
+
+## Unpublishing Extensions
+
+To remove an extension from the marketplace:
+
+```bash
+vsce unpublish <publisher>.<extension>
+```
+
+Or unpublish a specific version:
+
+```bash
+vsce unpublish <publisher>.<extension>@<version>
+```
+
+<Warning>
+Unpublishing affects all users. Consider deprecating instead if users rely on your extension.
+</Warning>
+
+## Best Practices
+
+### Pre-release Versions
+
+Test updates with pre-release versions:
+
+```bash
+vsce publish --pre-release
+```
+
+Users can opt into pre-release versions to help test new features.
+
+### Continuous Integration
+
+Automate publishing with GitHub Actions:
+
+```yaml .github/workflows/publish.yml
+name: Publish Extension
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - run: npm install
+      - run: npm run bundle
+      - run: npx vsce publish -p ${{ secrets.VSCE_PAT }}
+```
+
+Store your PAT as a repository secret.
+
+### Version Control
+
+Before publishing:
+
+```bash
+git add .
+git commit -m "v1.0.0"
+git tag v1.0.0
+git push origin main --tags
+```
+
+### Quality Checks
+
+✓ Test on Windows, macOS, and Linux  
+✓ Test with different VS Code versions  
+✓ Verify all commands work  
+✓ Check performance (extension startup time)  
+✓ Review all settings and configurations  
+✓ Proofread documentation  
+
+## Marketplace Management
+
+Manage your extensions at [marketplace.visualstudio.com/manage](https://marketplace.visualstudio.com/manage):
+
+- View statistics (installs, ratings)
+- Respond to reviews
+- Update publisher profile
+- Manage multiple extensions
+- View acquisition trends
+
+## Monitoring Success
+
+Track your extension's performance:
+
+- **Installs** - Total installations
+- **Ratings** - User satisfaction (1-5 stars)
+- **Reviews** - Detailed user feedback  
+- **Acquisition** - Install trends over time
+
+Respond to reviews and issues promptly to build trust.
+
+## Troubleshooting
+
+### Publication Failed
+
+Common issues:
+
+- **Invalid token**: Recreate PAT with correct permissions
+- **Missing publisher**: Add `"publisher"` field to package.json
+- **Invalid version**: Use semver format (e.g., 1.0.0)
+- **Missing icon**: Add icon file and reference in package.json
+- **Large package**: Check .vscodeignore excludes unnecessary files
+
+### Extension Not Appearing
+
+After publishing, it may take a few minutes for your extension to appear in search results. Clear your cache or search by exact name.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Extension Guidelines" href="https://code.visualstudio.com/api/references/extension-guidelines">
+    Follow best practices for high-quality extensions
+  </Card>
+  
+  <Card title="Marketplace Overview" href="./marketplace">
+    Learn how users discover and install extensions
+  </Card>
+</CardGroup>

@@ -1,0 +1,249 @@
+---
+title: 'VS Code CLI Overview'
+description: 'Introduction to the Visual Studio Code command-line interface for managing editors, extensions, and remote development'
+---
+
+## Introduction
+
+The Visual Studio Code CLI (`code`) is a powerful command-line interface built in Rust that provides comprehensive control over VS Code installations, extensions, and remote development features. The CLI enables automation, scripting, and headless operations for developers and administrators.
+
+## Installation
+
+The VS Code CLI is automatically included with VS Code installations. You can verify the installation by running:
+
+```bash
+code --version
+```
+
+This will display the CLI version and commit information.
+
+## Basic Usage
+
+The CLI follows a standard command structure:
+
+```bash
+code [options] [paths...]
+code <command> [arguments] [options]
+```
+
+### Opening Files and Folders
+
+Open a file or folder in VS Code:
+
+```bash
+# Open current directory
+code .
+
+# Open specific file
+code index.js
+
+# Open multiple files
+code file1.js file2.js
+
+# Open file at specific line and column
+code --goto index.js:10:5
+```
+
+### Reading from stdin
+
+You can pipe content directly into VS Code:
+
+```bash
+echo "Hello World" | code -
+cat log.txt | code -
+```
+
+## Common Use Cases
+
+### Development Workflow
+
+<AccordionGroup>
+  <Accordion title="Opening Projects">
+    ```bash
+    # Open project in new window
+    code --new-window ~/projects/myapp
+    
+    # Reuse existing window
+    code --reuse-window ~/projects/myapp
+    
+    # Add folder to current workspace
+    code --add ~/projects/lib
+    ```
+  </Accordion>
+
+  <Accordion title="Managing Extensions">
+    ```bash
+    # Install extension
+    code ext install ms-python.python
+    
+    # List installed extensions
+    code ext list
+    
+    # Uninstall extension
+    code ext uninstall ms-python.python
+    ```
+  </Accordion>
+
+  <Accordion title="Remote Development">
+    ```bash
+    # Start a tunnel for remote access
+    code tunnel
+    
+    # Run local web version
+    code serve-web --port 8000
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Automation and Scripting
+
+The CLI is ideal for automated workflows:
+
+```bash
+#!/bin/bash
+# Setup script for new developers
+
+# Install required extensions
+code ext install dbaeumer.vscode-eslint
+code ext install esbenp.prettier-vscode
+code ext install ms-python.python
+
+# Open project
+code ~/projects/team-project
+```
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Extension Management" icon="puzzle-piece">
+    Install, uninstall, and manage VS Code extensions from the command line
+  </Card>
+  
+  <Card title="Remote Tunnels" icon="network-wired">
+    Create secure tunnels to access VS Code from anywhere via vscode.dev
+  </Card>
+  
+  <Card title="Version Management" icon="code-branch">
+    Switch between different VS Code versions (stable, insiders, or specific versions)
+  </Card>
+  
+  <Card title="Web Server" icon="globe">
+    Run a local web version of VS Code for browser-based development
+  </Card>
+</CardGroup>
+
+## Global Options
+
+These options are available for all commands:
+
+<ParamField path="--verbose" type="boolean">
+  Enable verbose output for detailed logging
+</ParamField>
+
+<ParamField path="--log" type="string">
+  Set log level: `trace`, `debug`, `info`, `warn`, `error`, `critical`, `off`
+</ParamField>
+
+<ParamField path="--cli-data-dir" type="string">
+  Directory where CLI metadata should be stored (also via `VSCODE_CLI_DATA_DIR` environment variable)
+</ParamField>
+
+<ParamField path="--disable-telemetry" type="boolean">
+  Disable telemetry for the current command
+</ParamField>
+
+<ParamField path="--telemetry-level" type="string">
+  Set telemetry level: `off`, `crash`, `error`, `all`
+</ParamField>
+
+## Editor Options
+
+When opening files or folders, you can use these options:
+
+<ParamField path="--diff" type="string[]">
+  Compare two files side by side
+  
+  ```bash
+  code --diff file1.txt file2.txt
+  ```
+</ParamField>
+
+<ParamField path="--goto" type="string">
+  Open file at specific line and optional character position
+  
+  ```bash
+  code --goto index.js:25:10
+  ```
+</ParamField>
+
+<ParamField path="--new-window" type="boolean">
+  Force opening a new window instead of reusing existing one
+  
+  ```bash
+  code --new-window .
+  ```
+</ParamField>
+
+<ParamField path="--reuse-window" type="boolean">
+  Force reusing the last active window
+  
+  ```bash
+  code --reuse-window .
+  ```
+</ParamField>
+
+<ParamField path="--wait" type="boolean">
+  Wait for the files to be closed before returning (useful for git commit messages)
+  
+  ```bash
+  git config --global core.editor "code --wait"
+  ```
+</ParamField>
+
+<ParamField path="--locale" type="string">
+  Set the display language (e.g., `en-US`, `zh-TW`, `fr-FR`)
+  
+  ```bash
+  code --locale=fr-FR
+  ```
+</ParamField>
+
+## Data Directories
+
+<ParamField path="--user-data-dir" type="string">
+  Specify a custom directory for user data (allows running multiple isolated instances)
+  
+  ```bash
+  code --user-data-dir ~/.vscode-dev
+  ```
+</ParamField>
+
+<ParamField path="--extensions-dir" type="string">
+  Set a custom extensions directory
+  
+  ```bash
+  code --extensions-dir ~/.vscode-extensions
+  ```
+</ParamField>
+
+<Note>
+  Using custom data directories allows you to maintain separate VS Code configurations for different projects or purposes.
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Commands Reference" icon="terminal" href="/cli/commands">
+    Explore all available CLI commands and their options
+  </Card>
+  
+  <Card title="Remote Tunnels" icon="tunnel" href="/cli/remote-tunnels">
+    Learn how to set up remote development with tunnels
+  </Card>
+</CardGroup>
+
+## Additional Resources
+
+- Run `code --help` for a complete list of options
+- Use `code <command> --help` for command-specific help
+- The CLI supports both integrated mode (with VS Code installed) and standalone mode
