@@ -1,0 +1,152 @@
+{
+  "projectType": "saas",
+  "projectName": "Visual Studio Code",
+  "projectDescription": "A powerful, lightweight code editor with rich language support, debugging, and extensibility.",
+  "theme": "palm",
+  "primaryColor": "#218ecc",
+  "lightColor": "#ebf7f8",
+  "darkColor": "#7c98b0",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/editor",
+              "features/intellisense",
+              "features/debugging",
+              "features/source-control",
+              "features/terminal",
+              "features/tasks"
+            ]
+          },
+          {
+            "group": "Extensions",
+            "pages": [
+              "extensions/overview",
+              "extensions/marketplace",
+              "extensions/creating",
+              "extensions/publishing"
+            ]
+          },
+          {
+            "group": "Customization",
+            "pages": [
+              "customization/settings",
+              "customization/keybindings",
+              "customization/themes",
+              "customization/snippets"
+            ]
+          },
+          {
+            "group": "Languages",
+            "pages": [
+              "languages/overview",
+              "languages/javascript-typescript",
+              "languages/python",
+              "languages/markdown"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Extension API",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "api/overview",
+              "api/your-first-extension",
+              "api/extension-anatomy"
+            ]
+          },
+          {
+            "group": "Core APIs",
+            "pages": [
+              "api/commands",
+              "api/window",
+              "api/workspace",
+              "api/languages",
+              "api/extensions"
+            ]
+          },
+          {
+            "group": "Extension Guides",
+            "pages": [
+              "api/guides/language-providers",
+              "api/guides/webview",
+              "api/guides/tree-view",
+              "api/guides/decorators",
+              "api/guides/tasks"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "api/advanced/activation-events",
+              "api/advanced/contribution-points",
+              "api/advanced/testing"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "CLI",
+        "groups": [
+          {
+            "group": "Command Line",
+            "pages": [
+              "cli/overview",
+              "cli/commands",
+              "cli/remote-tunnels"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "IntelliSense code completion",
+    "Integrated debugging",
+    "Built-in Git support",
+    "Extensive extension marketplace",
+    "Multi-language support",
+    "Integrated terminal",
+    "Customizable editor",
+    "Remote development",
+    "Live Share collaboration",
+    "Workspace management"
+  ],
+  "publicApiSurface": [
+    "vscode.window",
+    "vscode.workspace",
+    "vscode.commands",
+    "vscode.languages",
+    "vscode.extensions",
+    "vscode.debug",
+    "vscode.tasks",
+    "vscode.authentication",
+    "vscode.env",
+    "vscode.Uri",
+    "vscode.Position",
+    "vscode.Range",
+    "vscode.TextDocument",
+    "vscode.TextEditor",
+    "vscode.CompletionItemProvider",
+    "vscode.HoverProvider",
+    "vscode.DefinitionProvider",
+    "vscode.CodeActionProvider",
+    "vscode.Diagnostic",
+    "vscode.TreeDataProvider"
+  ]
+}
