@@ -90,7 +90,11 @@
               "api/window",
               "api/workspace",
               "api/languages",
-              "api/extensions"
+              "api/extensions",
+              "api/env",
+              "api/debug",
+              "api/tasks-api",
+              "api/authentication"
             ]
           },
           {

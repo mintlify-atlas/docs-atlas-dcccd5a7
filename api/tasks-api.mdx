@@ -1,0 +1,237 @@
+---
+title: "Tasks API"
+description: "Register task providers and execute tasks programmatically"
+---
+
+## Overview
+
+The `vscode.tasks` namespace provides functions to register task providers and execute tasks programmatically. This complements the [Tasks Guide](/api/guides/tasks) which covers creating custom task types.
+
+## Key Functions
+
+### registerTaskProvider
+
+Register a task provider that can supply tasks dynamically.
+
+```typescript
+function registerTaskProvider(
+  type: string,
+  provider: TaskProvider
+): Disposable
+```
+
+<ParamField path="type" type="string" required>
+  The task kind type this provider is registered for
+</ParamField>
+
+<ParamField path="provider" type="TaskProvider" required>
+  A task provider implementation
+</ParamField>
+
+**Example:**
+
+```typescript
+import * as vscode from 'vscode';
+
+class MyTaskProvider implements vscode.TaskProvider {
+  provideTasks(): vscode.ProviderResult<vscode.Task[]> {
+    const task = new vscode.Task(
+      { type: 'myTask' },
+      vscode.TaskScope.Workspace,
+      'My Task',
+      'myExtension',
+      new vscode.ShellExecution('echo Hello')
+    );
+    return [task];
+  }
+
+  resolveTask(task: vscode.Task): vscode.ProviderResult<vscode.Task> {
+    return task;
+  }
+}
+
+const provider = new MyTaskProvider();
+vscode.tasks.registerTaskProvider('myTask', provider);
+```
+
+### fetchTasks
+
+Fetches all available tasks in the system, including tasks from `tasks.json` and contributed providers.
+
+```typescript
+function fetchTasks(filter?: TaskFilter): Thenable<Task[]>
+```
+
+**Example:**
+
+```typescript
+// Get all tasks
+const allTasks = await vscode.tasks.fetchTasks();
+console.log(`Found ${allTasks.length} tasks`);
+
+// Filter by type
+const npmTasks = await vscode.tasks.fetchTasks({ type: 'npm' });
+npmTasks.forEach(task => {
+  console.log(`NPM task: ${task.name}`);
+});
+```
+
+### executeTask
+
+Executes a task that is managed by the editor.
+
+```typescript
+function executeTask(task: Task): Thenable<TaskExecution>
+```
+
+**Example:**
+
+```typescript
+// Find and execute a task
+const tasks = await vscode.tasks.fetchTasks({ type: 'npm' });
+const buildTask = tasks.find(t => t.name === 'build');
+
+if (buildTask) {
+  const execution = await vscode.tasks.executeTask(buildTask);
+  console.log('Task started');
+}
+```
+
+<Warning>
+  When running a ShellExecution or ProcessExecution task in an environment where a new process cannot be started, an error will be thrown. In such environments, only CustomExecution tasks can be run.
+</Warning>
+
+## Properties
+
+### taskExecutions
+
+The currently active task executions or an empty array.
+
+```typescript
+const taskExecutions: readonly TaskExecution[]
+```
+
+**Example:**
+
+```typescript
+const runningTasks = vscode.tasks.taskExecutions;
+console.log(`Currently running ${runningTasks.length} tasks`);
+```
+
+## Events
+
+### onDidStartTask
+
+Fires when a task starts.
+
+```typescript
+const onDidStartTask: Event<TaskStartEvent>
+```
+
+**Example:**
+
+```typescript
+vscode.tasks.onDidStartTask(event => {
+  const task = event.execution.task;
+  console.log(`Task started: ${task.name}`);
+});
+```
+
+### onDidEndTask
+
+Fires when a task ends.
+
+```typescript
+const onDidEndTask: Event<TaskEndEvent>
+```
+
+**Example:**
+
+```typescript
+vscode.tasks.onDidEndTask(event => {
+  const task = event.execution.task;
+  console.log(`Task ended: ${task.name}`);
+});
+```
+
+### onDidStartTaskProcess
+
+Fires when the underlying process has been started. This event will not fire for tasks that don't execute an underlying process.
+
+```typescript
+const onDidStartTaskProcess: Event<TaskProcessStartEvent>
+```
+
+### onDidEndTaskProcess
+
+Fires when the underlying process has ended.
+
+```typescript
+const onDidEndTaskProcess: Event<TaskProcessEndEvent>
+```
+
+## Complete Example
+
+```typescript
+import * as vscode from 'vscode';
+
+export function activate(context: vscode.ExtensionContext) {
+  // Register task provider
+  const provider = vscode.tasks.registerTaskProvider('myBuild', {
+    provideTasks: () => {
+      const task = new vscode.Task(
+        { type: 'myBuild' },
+        vscode.TaskScope.Workspace,
+        'Build Project',
+        'myExtension',
+        new vscode.ShellExecution('npm run build')
+      );
+      return [task];
+    },
+    resolveTask: (task) => task
+  });
+
+  context.subscriptions.push(provider);
+
+  // Monitor task execution
+  context.subscriptions.push(
+    vscode.tasks.onDidStartTask(event => {
+      vscode.window.showInformationMessage(
+        `Started: ${event.execution.task.name}`
+      );
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.tasks.onDidEndTask(event => {
+      vscode.window.showInformationMessage(
+        `Completed: ${event.execution.task.name}`
+      );
+    })
+  );
+
+  // Command to run custom task
+  const runTask = vscode.commands.registerCommand(
+    'myExtension.runTask',
+    async () => {
+      const tasks = await vscode.tasks.fetchTasks({ type: 'myBuild' });
+      if (tasks.length > 0) {
+        await vscode.tasks.executeTask(tasks[0]);
+      }
+    }
+  );
+
+  context.subscriptions.push(runTask);
+}
+```
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="Tasks Guide" icon="list-check" href="/api/guides/tasks">
+    Learn how to create custom task providers
+  </Card>
+  <Card title="Task Configuration" icon="gear" href="/features/tasks">
+    Configure tasks in tasks.json
+  </Card>
+</CardGroup>

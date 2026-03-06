@@ -1,0 +1,336 @@
+---
+title: "Debug API"
+description: "Start and control debug sessions programmatically"
+---
+
+## Overview
+
+The `vscode.debug` namespace provides functions to start and control debug sessions, register debug adapters, and track debugging state.
+
+## Starting Debug Sessions
+
+### startDebugging
+
+Start a debugging session.
+
+```typescript
+function startDebugging(
+  folder: WorkspaceFolder | undefined,
+  nameOrConfiguration: string | DebugConfiguration,
+  parentSessionOrOptions?: DebugSession | DebugSessionOptions
+): Thenable<boolean>
+```
+
+**Example:**
+
+```typescript
+import * as vscode from 'vscode';
+
+// Start debugging using a launch.json configuration by name
+await vscode.debug.startDebugging(
+  vscode.workspace.workspaceFolders?.[0],
+  'Launch Program'
+);
+
+// Start debugging with inline configuration
+await vscode.debug.startDebugging(
+  vscode.workspace.workspaceFolders?.[0],
+  {
+    type: 'node',
+    request: 'launch',
+    name: 'Debug Current File',
+    program: '${file}'
+  }
+);
+```
+
+### stopDebugging
+
+Stop a specific debug session or all sessions.
+
+```typescript
+function stopDebugging(session?: DebugSession): Thenable<void>
+```
+
+**Example:**
+
+```typescript
+// Stop current session
+if (vscode.debug.activeDebugSession) {
+  await vscode.debug.stopDebugging(vscode.debug.activeDebugSession);
+}
+
+// Stop all sessions
+await vscode.debug.stopDebugging();
+```
+
+## Debug Adapters
+
+### registerDebugAdapterDescriptorFactory
+
+Register a debug adapter descriptor factory.
+
+```typescript
+function registerDebugAdapterDescriptorFactory(
+  debugType: string,
+  factory: DebugAdapterDescriptorFactory
+): Disposable
+```
+
+**Example:**
+
+```typescript
+class MyDebugAdapterFactory implements vscode.DebugAdapterDescriptorFactory {
+  createDebugAdapterDescriptor(
+    session: vscode.DebugSession,
+    executable: vscode.DebugAdapterExecutable | undefined
+  ): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
+    // Return descriptor for debug adapter
+    return new vscode.DebugAdapterExecutable(
+      'node',
+      ['./out/debugAdapter.js']
+    );
+  }
+}
+
+vscode.debug.registerDebugAdapterDescriptorFactory(
+  'myDebugger',
+  new MyDebugAdapterFactory()
+);
+```
+
+### registerDebugConfigurationProvider
+
+Register a debug configuration provider.
+
+```typescript
+function registerDebugConfigurationProvider(
+  debugType: string,
+  provider: DebugConfigurationProvider,
+  triggerKind?: DebugConfigurationProviderTriggerKind
+): Disposable
+```
+
+**Example:**
+
+```typescript
+class MyConfigProvider implements vscode.DebugConfigurationProvider {
+  resolveDebugConfiguration(
+    folder: vscode.WorkspaceFolder | undefined,
+    config: vscode.DebugConfiguration,
+    token?: vscode.CancellationToken
+  ): vscode.ProviderResult<vscode.DebugConfiguration> {
+    // Modify or validate configuration
+    if (!config.program) {
+      config.program = '${file}';
+    }
+    return config;
+  }
+}
+
+vscode.debug.registerDebugConfigurationProvider(
+  'node',
+  new MyConfigProvider()
+);
+```
+
+## Properties
+
+### activeDebugSession
+
+The currently active debug session or `undefined`.
+
+```typescript
+const activeDebugSession: DebugSession | undefined
+```
+
+**Example:**
+
+```typescript
+if (vscode.debug.activeDebugSession) {
+  console.log(`Debugging: ${vscode.debug.activeDebugSession.name}`);
+}
+```
+
+### activeDebugConsole
+
+The currently active debug console.
+
+```typescript
+const activeDebugConsole: DebugConsole
+```
+
+**Example:**
+
+```typescript
+vscode.debug.activeDebugConsole.appendLine('Debug message');
+vscode.debug.activeDebugConsole.append('Inline message');
+```
+
+### breakpoints
+
+All breakpoints.
+
+```typescript
+const breakpoints: readonly Breakpoint[]
+```
+
+**Example:**
+
+```typescript
+const allBreakpoints = vscode.debug.breakpoints;
+console.log(`Total breakpoints: ${allBreakpoints.length}`);
+```
+
+## Events
+
+### onDidStartDebugSession
+
+Fires when a debug session is started.
+
+```typescript
+const onDidStartDebugSession: Event<DebugSession>
+```
+
+**Example:**
+
+```typescript
+vscode.debug.onDidStartDebugSession(session => {
+  console.log(`Started debugging: ${session.name}`);
+  vscode.window.showInformationMessage(`Debug session started: ${session.name}`);
+});
+```
+
+### onDidTerminateDebugSession
+
+Fires when a debug session terminates.
+
+```typescript
+const onDidTerminateDebugSession: Event<DebugSession>
+```
+
+### onDidChangeActiveDebugSession
+
+Fires when the active debug session changes.
+
+```typescript
+const onDidChangeActiveDebugSession: Event<DebugSession | undefined>
+```
+
+### onDidChangeBreakpoints
+
+Fires when breakpoints are added, removed, or changed.
+
+```typescript
+const onDidChangeBreakpoints: Event<BreakpointsChangeEvent>
+```
+
+**Example:**
+
+```typescript
+vscode.debug.onDidChangeBreakpoints(event => {
+  console.log(`Added: ${event.added.length}`);
+  console.log(`Removed: ${event.removed.length}`);
+  console.log(`Changed: ${event.changed.length}`);
+});
+```
+
+## Breakpoint Management
+
+### addBreakpoints
+
+Add breakpoints.
+
+```typescript
+function addBreakpoints(breakpoints: readonly Breakpoint[]): void
+```
+
+**Example:**
+
+```typescript
+const uri = vscode.Uri.file('/path/to/file.ts');
+const breakpoint = new vscode.SourceBreakpoint(
+  new vscode.Location(uri, new vscode.Position(10, 0)),
+  true
+);
+
+vscode.debug.addBreakpoints([breakpoint]);
+```
+
+### removeBreakpoints
+
+Remove breakpoints.
+
+```typescript
+function removeBreakpoints(breakpoints: readonly Breakpoint[]): void
+```
+
+## Complete Example
+
+```typescript
+import * as vscode from 'vscode';
+
+export function activate(context: vscode.ExtensionContext) {
+  // Register debug configuration provider
+  const configProvider = vscode.debug.registerDebugConfigurationProvider(
+    'node',
+    {
+      resolveDebugConfiguration(
+        folder: vscode.WorkspaceFolder | undefined,
+        config: vscode.DebugConfiguration
+      ): vscode.ProviderResult<vscode.DebugConfiguration> {
+        if (!config.request) {
+          vscode.window.showErrorMessage('No debug configuration found');
+          return undefined;
+        }
+        return config;
+      }
+    }
+  );
+
+  context.subscriptions.push(configProvider);
+
+  // Monitor debug sessions
+  context.subscriptions.push(
+    vscode.debug.onDidStartDebugSession(session => {
+      vscode.debug.activeDebugConsole.appendLine(
+        `Debug session started: ${session.name}`
+      );
+    })
+  );
+
+  // Command to start debugging
+  const startDebug = vscode.commands.registerCommand(
+    'myExtension.startDebugging',
+    async () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        return;
+      }
+
+      await vscode.debug.startDebugging(
+        vscode.workspace.getWorkspaceFolder(editor.document.uri),
+        {
+          type: 'node',
+          request: 'launch',
+          name: 'Debug File',
+          program: editor.document.uri.fsPath
+        }
+      );
+    }
+  );
+
+  context.subscriptions.push(startDebug);
+}
+```
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="Debugging Feature" icon="bug" href="/features/debugging">
+    Learn about VS Code's debugging capabilities
+  </Card>
+  <Card title="Commands API" icon="terminal" href="/api/commands">
+    Register and execute commands
+  </Card>
+</CardGroup>
